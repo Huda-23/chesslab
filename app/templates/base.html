@@ -6,6 +6,24 @@
   <title>{% block title %}ChessLab{% endblock %}</title>
 </head>
 <body style="background:#1c1f24;color:#e6e6e6;font-family:sans-serif;margin:2rem">
+  <nav style="display:flex;gap:1rem;align-items:center;margin-bottom:2rem">
+    <a href="{{ url_for('main.index') }}" style="color:#34d399;font-weight:bold">ChessLab</a>
+    {% if g.user %}
+      <a href="{{ url_for('auth.profile') }}" style="color:#e6e6e6">Perfil</a>
+      <form method="post" action="{{ url_for('auth.logout') }}" style="margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Salir ({{ g.user.username }})</button>
+      </form>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" style="color:#e6e6e6">Entrar</a>
+      <a href="{{ url_for('auth.register') }}" style="color:#e6e6e6">Registrarse</a>
+    {% endif %}
+  </nav>
+
+  {% for message in get_flashed_messages() %}
+    <p style="color:#fbbf24">{{ message }}</p>
+  {% endfor %}
+
   {% block content %}{% endblock %}
 </body>
 </html>

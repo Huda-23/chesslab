@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Perfil de {{ g.user.username }}</h1>
+  <p>Cuenta premium: {{ "sí" if g.user.is_premium else "no" }}</p>
+  <p>Aquí irá tu historial de partidas.</p>
+{% endblock %}

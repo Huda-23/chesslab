@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>ChessLab</h1>
-  <p>Etapa 1: el despliegue funciona. Próximamente: login, partidas y academia.</p>
+  {% if g.user %}
+    <p>Hola, {{ g.user.username }}.</p>
+  {% else %}
+    <p>Regístrate o inicia sesión para empezar.</p>
+  {% endif %}
 {% endblock %}

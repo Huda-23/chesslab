@@ -1,10 +1,14 @@
+import logging
 import os
+
 from flask import Flask
-from . import db, routes
+
+from . import auth, db, routes
 
 
 def create_app():
     app = Flask(__name__)
+    app.logger.setLevel(logging.INFO)
 
     # El secreto sale del entorno. Si falta, la app NO arranca.
     secret = os.environ.get("SESSION_SECRET")
@@ -20,4 +24,5 @@ def create_app():
 
     db.init_app(app)
     app.register_blueprint(routes.bp)
+    app.register_blueprint(auth.bp)
     return app
