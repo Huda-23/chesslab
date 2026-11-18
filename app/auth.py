@@ -3,6 +3,7 @@ import hmac
 import re
 import secrets
 import sqlite3
+from datetime import datetime
 
 from flask import (Blueprint, abort, current_app, flash, g, redirect,
                    render_template, request, session, url_for)
@@ -126,7 +127,56 @@ def logout():
     return redirect(url_for("main.index"))
 
 
+# Cómo se guarda el resultado de una partida en la tabla games (lo usará /play).
+# Siempre desde el punto de vista del usuario: "victoria" = ganó el usuario.
+RESULTADOS = ("victoria", "tablas", "derrota")
+
+
+@bp.app_template_filter("fecha")
+def formato_fecha(valor):
+    """Convierte '2026-11-18 20:01:25' (como lo guarda SQLite) en '18/11/2026'."""
+    try:
+        return datetime.strptime(valor, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
+    except (TypeError, ValueError):
+        return valor
+
+
 @bp.get("/perfil")
 @login_required
 def profile():
-    return render_template("profile.html")
+    db = get_db()
+    # AISLAMIENTO ENTRE USUARIOS: todas las consultas filtran por el id del
+    # usuario de la SESIÓN (g.user), nunca por un id que llegue en la URL o en
+    # un formulario. Así nadie puede pedir el historial de otra persona.
+    uid = g.user["id"]
+
+    # Cuántas victorias, tablas y derrotas tiene (consulta parametrizada)
+    conteo = dict.fromkeys(RESULTADOS, 0)
+    for fila in db.execute(
+        "SELECT result, COUNT(*) AS n FROM games WHERE user_id = ? GROUP BY result",
+        (uid,),
+    ):
+        if fila["result"] in conteo:          # se ignora cualquier valor desconocido
+            conteo[fila["result"]] = fila["n"]
+    total = sum(conteo.values())
+
+    # Porcentajes para la barra de resultados (enteros calculados aquí, en el servidor)
+    porcentajes = {r: round(100 * n / total) if total else 0 for r, n in conteo.items()}
+
+    # Últimas 20 partidas, de la más reciente a la más antigua
+    partidas = db.execute(
+        "SELECT result, pgn, played_at FROM games WHERE user_id = ? "
+        "ORDER BY played_at DESC, id DESC LIMIT 20",
+        (uid,),
+    ).fetchall()
+
+    alta = db.execute("SELECT created_at FROM users WHERE id = ?", (uid,)).fetchone()
+
+    return render_template(
+        "profile.html",
+        conteo=conteo,
+        total=total,
+        porcentajes=porcentajes,
+        partidas=partidas,
+        miembro_desde=alta["created_at"],
+    )

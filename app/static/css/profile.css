@@ -1,0 +1,181 @@
+/* ==========================================================================
+   ChessLab · página de perfil
+   ========================================================================== */
+
+/* ---------- 1. Cabecera ---------- */
+.profile-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  background:
+    radial-gradient(ellipse 60% 120% at 0% 0%, rgba(52, 211, 153, .14), transparent 65%),
+    linear-gradient(180deg, var(--surface), var(--bg-elev));
+}
+.profile-id { display: flex; align-items: center; gap: 1.1rem; }
+
+.avatar--xl {
+  width: 72px; height: 72px;
+  font-size: 2rem;
+  box-shadow: 0 0 0 4px var(--bg-elev), 0 0 0 6px rgba(52, 211, 153, .45);
+}
+/* Los PRO llevan el anillo dorado */
+.avatar--pro {
+  background: linear-gradient(135deg, #ffe08a, var(--gold) 45%, #d99a1e);
+  color: #3a2a00;
+  box-shadow: 0 0 0 4px var(--bg-elev), 0 0 0 6px rgba(245, 196, 81, .6);
+}
+
+.profile-name {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .6rem;
+  margin: 0 0 .2rem;
+  font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem);
+}
+.profile-meta { margin: 0; color: var(--text-muted); font-size: .95rem; }
+
+/* ---------- 2. Estadísticas ---------- */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.pstat {
+  display: flex; flex-direction: column; gap: .35rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border-strong);
+  background: var(--bg-elev);
+  animation: pstat-in .5s var(--ease) both;
+}
+.pstat:nth-child(2) { animation-delay: .06s; }
+.pstat:nth-child(3) { animation-delay: .12s; }
+.pstat:nth-child(4) { animation-delay: .18s; }
+@keyframes pstat-in { from { opacity: 0; transform: translateY(10px); } }
+
+.pstat-num {
+  font-size: clamp(1.8rem, 1.3rem + 1.4vw, 2.4rem);
+  font-weight: 800; line-height: 1; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+.pstat-label { font-size: .85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+.pstat--win  { border-top-color: var(--accent); }
+.pstat--win  .pstat-num { color: var(--accent); }
+.pstat--draw { border-top-color: #8b95a1; }
+.pstat--loss { border-top-color: var(--danger); }
+.pstat--loss .pstat-num { color: var(--danger); }
+
+/* ---------- 3. Cuadrícula: historial + columna lateral ---------- */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.25rem;
+  align-items: start;
+}
+.profile-side { display: grid; gap: 1.25rem; }
+.side-title { display: flex; align-items: center; gap: .5rem; font-size: 1.1rem; margin-bottom: 1rem; }
+
+/* ---------- 4. Historial ---------- */
+.history-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.history-head h2 { font-size: 1.3rem; margin: 0; }
+
+.games { margin: 0; padding: 0; list-style: none; }
+.game {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center; gap: .5rem 1rem;
+  padding: .8rem 0;
+  border-top: 1px solid var(--border);
+}
+.game:first-child { border-top: 0; }
+.game-date { color: var(--text-muted); font-size: .92rem; font-variant-numeric: tabular-nums; }
+
+.result {
+  display: inline-flex; justify-content: center;
+  min-width: 5.5rem;
+  padding: .25rem .65rem; border-radius: 999px;
+  font-size: .8rem; font-weight: 700;
+  border: 1px solid var(--border);
+  color: var(--text-muted); background: var(--surface-2);
+}
+.result--victoria { color: var(--accent); background: rgba(52, 211, 153, .1);  border-color: rgba(52, 211, 153, .35); }
+.result--derrota  { color: var(--danger); background: rgba(248, 113, 113, .1); border-color: rgba(248, 113, 113, .35); }
+.result--tablas   { color: #c3cad2; }
+
+.game-pgn summary {
+  cursor: pointer; list-style: none;
+  font-size: .85rem; font-weight: 600; color: var(--accent);
+}
+.game-pgn summary::-webkit-details-marker { display: none; }
+.game-pgn .label-hide { display: none; }
+.game-pgn[open] .label-show { display: none; }
+.game-pgn[open] .label-hide { display: inline; }
+/* Al abrir, el PGN ocupa toda la fila de abajo y el enlace se queda arriba a la derecha */
+.game-pgn[open] { grid-column: 1 / -1; }
+.game-pgn[open] summary { position: absolute; right: 0; top: calc(.8rem + .4rem); }
+.game-pgn pre {
+  margin: .6rem 0 0;
+  padding: .8rem 1rem;
+  max-height: 12rem; overflow: auto;
+  white-space: pre-wrap; word-break: break-word;
+  font-family: var(--font-mono); font-size: .82rem; line-height: 1.6;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+
+/* Estado vacío */
+.empty { text-align: center; padding: 2.5rem 1rem 1.5rem; }
+.empty-icon {
+  display: grid; place-items: center;
+  width: 72px; height: 72px; margin: 0 auto 1.1rem;
+  border-radius: 50%;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", serif;
+  font-variant-emoji: text;
+  font-size: 2.4rem; line-height: 1;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  animation: bob 3s ease-in-out infinite;
+}
+@keyframes bob { 50% { transform: translateY(-5px); } }
+.empty-title { font-weight: 700; font-size: 1.1rem; margin-bottom: .4rem; }
+.empty .muted { max-width: 26rem; margin-inline: auto; }
+
+/* ---------- 5. Rendimiento ---------- */
+.winrate { margin-bottom: .75rem; color: var(--text-muted); }
+.winrate strong { font-size: 2rem; color: var(--text); letter-spacing: -.02em; margin-right: .25rem; }
+
+.result-bar { display: block; width: 100%; height: 12px; border-radius: 999px; overflow: hidden; margin-bottom: 1rem; }
+.seg-win  { fill: var(--accent); }
+.seg-draw { fill: #8b95a1; }
+.seg-loss { fill: var(--danger); }
+
+.legend { margin: 0; padding: 0; list-style: none; display: grid; gap: .4rem; font-size: .88rem; color: var(--text-muted); }
+.legend li { display: flex; align-items: center; gap: .5rem; }
+.key { width: 10px; height: 10px; border-radius: 3px; }
+.key--win  { background: var(--accent); }
+.key--draw { background: #8b95a1; }
+.key--loss { background: var(--danger); }
+
+/* ---------- 6. Plan ---------- */
+.plan .muted { margin-bottom: 1.25rem; }
+.gold { color: var(--gold); }
+.plan--pro {
+  border-color: rgba(245, 196, 81, .4);
+  background:
+    radial-gradient(ellipse 90% 70% at 100% 0%, rgba(245, 196, 81, .14), transparent 65%),
+    linear-gradient(180deg, var(--surface), var(--bg-elev));
+}
+.plan-list { margin: 0; padding: 0; list-style: none; display: grid; gap: .55rem; }
+.plan-list li { display: flex; gap: .55rem; color: var(--text-muted); }
+.plan-list li::before { content: "★"; color: var(--gold); }
+
+/* ---------- 7. Móvil ---------- */
+@media (max-width: 900px) {
+  .profile-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .profile-stats { grid-template-columns: repeat(2, 1fr); }
+  .profile-head .btn { width: 100%; }
+}

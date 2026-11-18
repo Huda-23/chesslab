@@ -1,6 +1,126 @@
 {% extends "base.html" %}
+
+{% block title %}Perfil de {{ g.user.username }} · ChessLab{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
 {% block content %}
-  <h1>Perfil de {{ g.user.username }}</h1>
-  <p>Cuenta premium: {{ "sí" if g.user.is_premium else "no" }}</p>
-  <p>Aquí irá tu historial de partidas.</p>
+{% set etiquetas = {"victoria": "Victoria", "tablas": "Tablas", "derrota": "Derrota"} %}
+
+{# ===================== 1. Cabecera del perfil ===================== #}
+<section class="profile-head card">
+  <div class="profile-id">
+    <span class="avatar avatar--xl{% if g.user.is_premium %} avatar--pro{% endif %}" aria-hidden="true">{{ g.user.username[0] | upper }}</span>
+    <div>
+      <h1 class="profile-name">
+        {{ g.user.username }}
+        {% if g.user.is_premium %}<span class="badge-pro">PRO</span>{% endif %}
+      </h1>
+      <p class="profile-meta">Miembro desde el {{ miembro_desde | fecha }}</p>
+    </div>
+  </div>
+  <span class="btn btn-primary is-disabled" aria-disabled="true">Jugar · próximamente</span>
+</section>
+
+{# ===================== 2. Estadísticas ===================== #}
+<section class="profile-stats" aria-label="Estadísticas">
+  <div class="pstat">
+    <span class="pstat-num">{{ total }}</span>
+    <span class="pstat-label">Partidas</span>
+  </div>
+  <div class="pstat pstat--win">
+    <span class="pstat-num">{{ conteo.victoria }}</span>
+    <span class="pstat-label">Victorias</span>
+  </div>
+  <div class="pstat pstat--draw">
+    <span class="pstat-num">{{ conteo.tablas }}</span>
+    <span class="pstat-label">Tablas</span>
+  </div>
+  <div class="pstat pstat--loss">
+    <span class="pstat-num">{{ conteo.derrota }}</span>
+    <span class="pstat-label">Derrotas</span>
+  </div>
+</section>
+
+<div class="profile-grid">
+
+  {# ===================== 3. Historial de partidas ===================== #}
+  <section class="card history" aria-labelledby="titulo-historial">
+    <div class="history-head">
+      <h2 id="titulo-historial">Tus partidas</h2>
+      {% if total %}<span class="muted">Últimas {{ partidas | length }}</span>{% endif %}
+    </div>
+
+    {% if partidas %}
+      <ul class="games">
+        {% for p in partidas %}
+          <li class="game">
+            <span class="result result--{{ p.result if p.result in etiquetas else 'other' }}">
+              {{ etiquetas.get(p.result, p.result) }}
+            </span>
+            <span class="game-date">{{ p.played_at | fecha }}</span>
+            {# El PGN lo enviará el navegador desde /play: es un dato del usuario.
+               Jinja lo escapa al pintarlo, así que un PGN con <script> saldría como texto. #}
+            <details class="game-pgn">
+              <summary><span class="label-show">Ver PGN</span><span class="label-hide">Ocultar PGN</span></summary>
+              <pre>{{ p.pgn }}</pre>
+            </details>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty">
+        <div class="empty-icon" aria-hidden="true">♟&#xFE0E;</div>
+        <p class="empty-title">Aún no has jugado ninguna partida</p>
+        <p class="muted">Cuando juegues contra el bot, cada partida aparecerá aquí con su resultado, su fecha y su PGN. Solo tú puedes verlas.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <aside class="profile-side">
+
+    {# ===================== 4. Rendimiento ===================== #}
+    <section class="card" aria-labelledby="titulo-rendimiento">
+      <h2 id="titulo-rendimiento" class="side-title">Rendimiento</h2>
+      {% if total %}
+        <p class="winrate"><strong>{{ porcentajes.victoria }}%</strong> de victorias</p>
+        {# Barra en SVG: los anchos son atributos del SVG (no style="..."), así que
+           siguen funcionando con una CSP estricta. Los números los calcula el servidor. #}
+        <svg class="result-bar" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
+          <rect class="seg-win"  x="0" y="0" width="{{ porcentajes.victoria }}" height="10"/>
+          <rect class="seg-draw" x="{{ porcentajes.victoria }}" y="0" width="{{ porcentajes.tablas }}" height="10"/>
+          <rect class="seg-loss" x="{{ porcentajes.victoria + porcentajes.tablas }}" y="0" width="{{ 100 - porcentajes.victoria - porcentajes.tablas }}" height="10"/>
+        </svg>
+        <ul class="legend">
+          <li><span class="key key--win"></span>Victorias {{ porcentajes.victoria }}%</li>
+          <li><span class="key key--draw"></span>Tablas {{ porcentajes.tablas }}%</li>
+          <li><span class="key key--loss"></span>Derrotas {{ 100 - porcentajes.victoria - porcentajes.tablas }}%</li>
+        </ul>
+      {% else %}
+        <p class="muted">Juega tu primera partida para ver aquí tu porcentaje de victorias.</p>
+      {% endif %}
+    </section>
+
+    {# ===================== 5. Plan de la cuenta ===================== #}
+    {% if g.user.is_premium %}
+      <section class="card plan plan--pro" aria-labelledby="titulo-plan">
+        <h2 id="titulo-plan" class="side-title">Tu plan <span class="badge-pro">PRO</span></h2>
+        <ul class="plan-list">
+          <li>Selector de dificultad del bot</li>
+          <li>Apertura exclusiva en la academia</li>
+          <li>Insignia dorada junto a tu nombre</li>
+        </ul>
+      </section>
+    {% else %}
+      <section class="card plan" aria-labelledby="titulo-plan">
+        <h2 id="titulo-plan" class="side-title">Tu plan: Básico</h2>
+        <p class="muted">Con <strong class="gold">ChessLab PRO</strong> eliges la dificultad del bot, desbloqueas una apertura exclusiva y consigues la insignia dorada.</p>
+        <span class="btn btn-ghost btn-block is-disabled" aria-disabled="true">Hazte PRO · próximamente</span>
+      </section>
+    {% endif %}
+
+  </aside>
+</div>
 {% endblock %}
