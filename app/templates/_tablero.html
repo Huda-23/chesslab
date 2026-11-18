@@ -1,0 +1,26 @@
+{#
+  Macro reutilizable: dibuja un tablero a partir de las casillas que genera
+  fen_a_tablero() en routes.py. La usaremos también en /learn y /play.
+
+    tablero     -> lista de 8 filas de casillas (sale de fen_a_tablero)
+    resaltadas  -> casillas con tinte esmeralda (p. ej. donde está la pieza)
+    puntos      -> casillas con un punto (a dónde puede moverse una pieza)
+
+  Todo lo que se pinta aquí viene de nuestro propio código, y aun así Jinja
+  lo escapa: si algún día llegara un dato raro, saldría como texto.
+  Es solo decoración para lectores de pantalla (aria-hidden); cada página
+  describe el tablero con texto al lado.
+#}
+{% macro dibujar_tablero(tablero, resaltadas=(), puntos=()) -%}
+<div class="board" aria-hidden="true">
+  {%- for fila in tablero %}{% for casilla in fila %}
+  <div class="sq {{ 'sq--light' if casilla.clara else 'sq--dark' }}
+    {%- if casilla.nombre in resaltadas %} sq--origin{% endif %}
+    {%- if casilla.nombre in puntos %} sq--dot{% endif %}" data-sq="{{ casilla.nombre }}">
+    {%- if casilla.nombre[0] == 'a' %}<span class="coord coord--rank">{{ casilla.nombre[1] }}</span>{% endif %}
+    {%- if casilla.nombre[1] == '1' %}<span class="coord coord--file">{{ casilla.nombre[0] }}</span>{% endif %}
+    {%- if casilla.pieza %}<span class="piece piece--{{ casilla.color }}">{{ casilla.pieza }}</span>{% endif -%}
+  </div>
+  {%- endfor %}{% endfor %}
+</div>
+{%- endmacro %}

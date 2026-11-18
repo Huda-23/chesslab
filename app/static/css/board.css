@@ -1,0 +1,105 @@
+/* ==========================================================================
+   ChessLab · tablero de ajedrez
+   --------------------------------------------------------------------------
+   Estilos comunes a todos los tableros de la web (portada y, más adelante,
+   /learn y /play). El HTML del tablero lo genera la macro de
+   templates/_tablero.html.
+   ========================================================================== */
+
+/* Marco oscuro alrededor del tablero */
+.board-frame {
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #2a3038, #171a1f);
+  border: 1px solid var(--border-strong);
+  box-shadow:
+    0 30px 60px -20px rgba(0, 0, 0, .7),
+    0 0 0 1px rgba(255, 255, 255, .03) inset,
+    0 0 80px -20px rgba(52, 211, 153, .3);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);     /* 8 filas iguales, tengan piezas o no */
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;            /* las casillas miden su posición respecto al tablero */
+  container-type: inline-size;   /* las piezas se escalan según el ancho del tablero */
+}
+
+/* ---------- Casillas ---------- */
+.sq { position: relative; display: grid; place-items: center; min-width: 0; min-height: 0; }
+.sq--light { background: #cdd8d2; }
+.sq--dark  { background: #4e7a6c; }
+
+/* Última jugada: tinte cian */
+.sq--last::before {
+  content: ""; position: absolute; inset: 0;
+  background: rgba(34, 211, 238, .38);
+}
+/* Casilla de origen de una pieza que se está explicando: tinte esmeralda */
+.sq--origin::before {
+  content: ""; position: absolute; inset: 0;
+  background: rgba(52, 211, 153, .45);
+}
+/* Casillas a las que puede ir una pieza: punto en el centro */
+.sq--dot::after {
+  content: ""; position: absolute; z-index: 1;
+  width: 30%; height: 30%; border-radius: 50%;
+  background: rgba(16, 24, 22, .32);
+}
+/* Rey en jaque: brillo rojo bajo la pieza */
+.sq--check::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background: radial-gradient(circle, rgba(248, 113, 113, .95) 0%, rgba(248, 113, 113, .55) 40%, transparent 72%);
+  animation: check-in .3s var(--ease);
+}
+@keyframes check-in { from { opacity: 0; } }
+
+/* Coordenadas (a-h, 1-8) en las esquinas, como en los tableros de verdad */
+.coord {
+  position: absolute; z-index: 1;
+  font-size: 2.3cqi; font-weight: 700; line-height: 1;
+}
+.coord--rank { top: 4%; left: 6%; }
+.coord--file { bottom: 4%; right: 6%; }
+.sq--light .coord { color: #4e7a6c; }
+.sq--dark  .coord { color: #cdd8d2; }
+
+/* ---------- Piezas (símbolos Unicode) ---------- */
+.piece {
+  grid-area: 1 / 1;              /* si hay dos piezas un instante (captura), se superponen */
+  position: relative; z-index: 2;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", "Arial Unicode MS", serif;
+  font-variant-emoji: text;
+  font-size: 9.5cqi;
+  line-height: 1;
+  user-select: none;
+}
+.piece--w {
+  color: #fbfaf6;
+  text-shadow: 0 0 1px #111, 0 1px 0 #111, 0 2px 4px rgba(0, 0, 0, .45);
+}
+.piece--b {
+  color: #15181c;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .25), 0 2px 4px rgba(0, 0, 0, .35);
+}
+.piece.is-moving { z-index: 5; }               /* la pieza que se mueve pasa por encima */
+
+/* Texto bajo el tablero */
+.board-caption {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .3rem .55rem;
+  margin: 1.1rem 0 0;
+  font-size: .9rem; color: var(--text-muted);
+}
+.board-caption > span { white-space: nowrap; }
+
+/* Indicador de turno: círculo blanco o negro */
+.turn {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 1px solid var(--border-strong);
+}
+.turn--w { background: #fbfaf6; }
+.turn--b { background: #15181c; }

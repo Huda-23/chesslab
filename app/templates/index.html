@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% from "_tablero.html" import dibujar_tablero %}
 
 {% block title %}ChessLab · Juega, aprende y entiende el ajedrez{% endblock %}
 
 {% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/board.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
 {% endblock %}
 
@@ -26,7 +28,7 @@
 
     <p class="hero-lead">
       Partidas contra un bot, una academia para empezar desde cero
-      y tu historial guardado en un solo sitio.
+      y tu historial guardado en un solo sitio. Gratis y sin anuncios.
     </p>
 
     <div class="hero-actions">
@@ -39,29 +41,20 @@
       {% endif %}
     </div>
 
-    <ul class="hero-meta">
-      <li>Gratis</li>
-      <li>Sin anuncios</li>
-      <li>Para todos los niveles</li>
-    </ul>
+    {# Actividad real: los números salen de la tabla games (solo totales) #}
+    <p class="hero-live">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span><strong data-count="{{ partidas_hoy }}">{{ partidas_hoy }}</strong> partidas hoy</span>
+      <span class="hero-live-sep" aria-hidden="true">·</span>
+      <span><strong data-count="{{ partidas_total }}">{{ partidas_total }}</strong> en total</span>
+    </p>
   </div>
 
-  {# Tablero: routes.py lo genera con la posición inicial. home.js reproduce encima
-     la "Partida de la Ópera" (Morphy, 1858). Sin JavaScript se ve la posición inicial.
-     data-sq: nombre de cada casilla, para que el script sepa dónde mover. #}
+  {# Tablero grande: posición inicial. home.js reproduce encima la
+     "Partida de la Ópera" (Morphy, 1858). Sin JavaScript se queda quieto. #}
   <figure class="hero-board" data-autoplay>
     <div class="board-frame">
-      <div class="board" aria-hidden="true">
-        {% for fila in tablero %}
-          {% for casilla in fila %}
-            <div class="sq {{ 'sq--light' if casilla.clara else 'sq--dark' }}" data-sq="{{ casilla.nombre }}">
-              {% if casilla.nombre[0] == 'a' %}<span class="coord coord--rank">{{ casilla.nombre[1] }}</span>{% endif %}
-              {% if casilla.nombre[1] == '1' %}<span class="coord coord--file">{{ casilla.nombre[0] }}</span>{% endif %}
-              {% if casilla.pieza %}<span class="piece piece--{{ casilla.color }}">{{ casilla.pieza }}</span>{% endif %}
-            </div>
-          {% endfor %}
-        {% endfor %}
-      </div>
+      {{ dibujar_tablero(tablero) }}
     </div>
     <figcaption class="board-caption">
       <span class="dot" aria-hidden="true"></span>
@@ -72,8 +65,6 @@
 </section>
 
 {# ===================== 2. El ajedrez en números ===================== #}
-{# data-count: número final al que llega el contador animado. El HTML ya trae
-   el número escrito, así que sin JavaScript también se ve bien. #}
 <section class="stats reveal" aria-label="El ajedrez en números">
   <div class="stat">
     <span class="stat-num" data-count="20">20</span>
@@ -87,49 +78,107 @@
     <span class="stat-num">10<sup>120</sup></span>
     <span class="stat-label">partidas posibles, según la estimación de Claude Shannon</span>
   </div>
-  <div class="stat stat--live">
-    <span class="stat-num" data-count="{{ partidas_jugadas }}">{{ partidas_jugadas }}</span>
-    <span class="stat-label"><span class="live-dot" aria-hidden="true"></span>partidas jugadas en ChessLab</span>
-  </div>
 </section>
 
-{# ===================== 3. Qué ofrece ChessLab ===================== #}
+{# ===================== 3. Secciones alternadas ===================== #}
 <section class="section" aria-labelledby="titulo-funciones">
   <div class="section-head reveal">
     <p class="eyebrow">Qué encontrarás</p>
     <h2 id="titulo-funciones">Todo lo que necesitas para mejorar</h2>
   </div>
 
-  <div class="feature-grid">
-    <article class="card feature reveal">
-      <div class="feature-icon" aria-hidden="true">♟&#xFE0E;</div>
-      <h3>Juega contra el bot</h3>
-      <p>Partidas contra un motor de ajedrez. Cada partida se guarda con su resultado y su PGN para que puedas repasarla.</p>
-      <div class="feature-tags">
-        <span class="tag">Requiere cuenta</span>
-        <span class="tag tag--soon">Próximamente</span>
+  {# --- 3a. Problema táctico (se puede resolver aquí mismo) --- #}
+  <div class="showcase reveal" data-puzzle="{{ problema_solucion }}" data-mated="b">
+    <div class="showcase-media">
+      <div class="board-frame">
+        {{ dibujar_tablero(tablero_problema) }}
       </div>
-    </article>
+      <p class="board-caption">
+        <span class="turn turn--w" aria-hidden="true"></span>
+        <span>Mueven blancas · Mate en 1</span>
+      </p>
+    </div>
+    <div class="showcase-text">
+      <p class="eyebrow">Problemas</p>
+      <h3>Resuelve problemas tácticos</h3>
+      <p>Entrena el ojo con posiciones en las que hay una jugada ganadora. Empieza por este: las blancas dan mate en una sola jugada. ¿La ves?</p>
+      {# <details>: el navegador lo abre y cierra solo, sin JavaScript.
+         Con JavaScript, además, la torre se mueve en el tablero. #}
+      <div class="showcase-actions">
+        <details class="solution">
+          <summary class="btn btn-ghost">
+            <span class="label-show">Ver solución</span><span class="label-hide">Ocultar solución</span>
+          </summary>
+          <p class="solution-text">
+            <strong>1.Ta8#</strong> La torre sube hasta la última fila. El rey negro no puede escapar
+            porque sus propios peones le cierran el paso: es el <em>mate del pasillo</em>.
+          </p>
+        </details>
+      </div>
+      <div class="feature-tags">
+        <span class="tag tag--open">Pruébalo aquí</span>
+        <span class="tag tag--soon">Más problemas, próximamente</span>
+      </div>
+    </div>
+  </div>
 
-    <article class="card feature reveal">
-      <div class="feature-icon" aria-hidden="true">♝&#xFE0E;</div>
-      <h3>Academia</h3>
-      <p>Aprende cómo se mueve cada pieza, qué es el jaque, el mate o el enroque, y practica aperturas clásicas en el tablero.</p>
+  {# --- 3b. Academia: cómo se mueve el caballo --- #}
+  <div class="showcase showcase--reverse reveal">
+    <div class="showcase-media">
+      <div class="board-frame">
+        {{ dibujar_tablero(tablero_caballo, resaltadas=('d4',), puntos=saltos_caballo) }}
+      </div>
+      <p class="board-caption"><span>El caballo en d4 y sus 8 saltos</span></p>
+    </div>
+    <div class="showcase-text">
+      <p class="eyebrow">Academia</p>
+      <h3>Aprende desde cero</h3>
+      <p>Cómo se mueve cada pieza, cuánto vale y cómo captura. Por ejemplo, el caballo salta en forma de «L»: desde el centro puede ir a cualquiera de las 8 casillas marcadas, aunque haya piezas en medio.</p>
+      <div class="showcase-actions">
+        <span class="btn btn-ghost is-disabled" aria-disabled="true">Ir a la academia · próximamente</span>
+      </div>
       <div class="feature-tags">
         <span class="tag tag--open">Pública</span>
-        <span class="tag tag--soon">Próximamente</span>
+        <span class="tag">Piezas · Jaque · Enroque · Aperturas</span>
       </div>
-    </article>
+    </div>
+  </div>
 
-    <article class="card feature feature--pro reveal">
-      <div class="feature-icon" aria-hidden="true">♛&#xFE0E;</div>
-      <h3>ChessLab <span class="badge-pro">PRO</span></h3>
-      <p>Elige la dificultad del bot, desbloquea una apertura exclusiva y luce la insignia dorada junto a tu nombre.</p>
+  {# --- 3c. ChessLab PRO --- #}
+  <div class="showcase reveal">
+    <div class="showcase-media">
+      {# Ilustración de lo que desbloquea PRO (no es interactiva) #}
+      <div class="pro-panel" aria-hidden="true">
+        <div class="pro-panel-head">
+          <span class="pro-crown">♛&#xFE0E;</span>
+          <span>ChessLab</span>
+          <span class="badge-pro">PRO</span>
+        </div>
+        <p class="pro-panel-label">Dificultad del bot</p>
+        <div class="segmented">
+          <span>Fácil</span><span>Media</span><span>Difícil</span><span class="is-active">Maestro</span>
+        </div>
+        <p class="pro-panel-label">Aperturas</p>
+        <ul class="pro-openings">
+          <li>Apertura Española</li>
+          <li>Defensa Siciliana</li>
+          <li>Gambito de Dama</li>
+          <li class="is-pro">Apertura exclusiva <span class="badge-pro">PRO</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="showcase-text">
+      <p class="eyebrow">ChessLab PRO</p>
+      <h3>Lleva tu juego más lejos <span class="badge-pro">PRO</span></h3>
+      <p>Elige la dificultad del bot, desbloquea una apertura exclusiva en la academia y luce la insignia dorada junto a tu nombre.</p>
+      <div class="showcase-actions">
+        <span class="btn btn-ghost is-disabled" aria-disabled="true">Ver planes · próximamente</span>
+      </div>
       <div class="feature-tags">
         <span class="tag">Requiere cuenta</span>
-        <span class="tag tag--soon">Próximamente</span>
+        <span class="tag">Pago simulado</span>
       </div>
-    </article>
+    </div>
   </div>
 </section>
 

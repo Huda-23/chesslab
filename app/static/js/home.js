@@ -103,7 +103,7 @@
   }
 
 
-  /* ---------- 4. Partida que se juega sola en el tablero ---------- */
+  /* ---------- Datos: la partida que se reproduce en la portada ---------- */
 
   // "Partida de la Ópera": Paul Morphy contra el duque de Brunswick y el
   // conde Isouard, París, 1858. Una de las partidas más famosas de la historia.
@@ -129,15 +129,11 @@
     ["d1d8", "17.Td8#"],
   ];
 
-  function iniciarTablero() {
-    const figura = document.querySelector("[data-autoplay]");
-    if (!figura || reducirMovimiento || !Element.prototype.animate) return;
-
-    const textoJugada = figura.querySelector("[data-board-move]");
-    let tablero = figura.querySelector(".board");
-    // Copia de la posición inicial para poder volver a empezar
-    const posicionInicial = tablero.cloneNode(true);
-
+  /* ---------- 4. Herramientas comunes para mover piezas ----------
+     Recibe un tablero (el <div class="board">) y devuelve funciones para
+     mover piezas, quitar marcas y señalar jaques sobre ESE tablero. */
+  function crearControl(tablero) {
+    const duracion = reducirMovimiento ? 0 : 520;
     const casilla = (nombre) => tablero.querySelector('[data-sq="' + nombre + '"]');
 
     function quitarMarcas() {
@@ -168,32 +164,47 @@
       if (capturada) {
         capturada.animate(
           [{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.5)" }],
-          { duration: 240, delay: 260, fill: "forwards" }
+          { duration: duracion / 2, delay: duracion / 2, fill: "forwards" }
         ).finished.then(() => capturada.remove());
       }
 
       return pieza.animate(
         [{ transform: "translate(" + dx + "px, " + dy + "px)" }, { transform: "translate(0, 0)" }],
-        { duration: 520, easing: "cubic-bezier(.2, .8, .2, 1)" }
+        { duration: duracion, easing: "cubic-bezier(.2, .8, .2, 1)" }
       ).finished.then(() => pieza.classList.remove("is-moving"));
     }
 
-    // Resalta en rojo la casilla del rey que está en jaque
+    // Resalta en rojo la casilla del rey de ese color ("w" o "b")
     function marcarJaque(color) {
       tablero.querySelectorAll(".piece--" + color).forEach((p) => {
         if (p.textContent.startsWith("♚")) p.parentElement.classList.add("sq--check");
       });
     }
 
+    return { quitarMarcas, mover, marcarJaque };
+  }
+
+
+  /* ---------- 5. Partida que se juega sola en el tablero grande ---------- */
+  function iniciarTablero() {
+    const figura = document.querySelector("[data-autoplay]");
+    if (!figura || reducirMovimiento || !Element.prototype.animate) return;
+
+    const textoJugada = figura.querySelector("[data-board-move]");
+    let tablero = figura.querySelector(".board");
+    let control = crearControl(tablero);
+    // Copia de la posición inicial para poder volver a empezar
+    const posicionInicial = tablero.cloneNode(true);
+
     async function jugar([movimientos, notacion]) {
-      quitarMarcas();
+      control.quitarMarcas();
       if (textoJugada) textoJugada.textContent = notacion;
 
-      await Promise.all(movimientos.split(" ").map((m) => mover(m.slice(0, 2), m.slice(2, 4))));
+      await Promise.all(movimientos.split(" ").map((m) => control.mover(m.slice(0, 2), m.slice(2, 4))));
 
       if (/[+#]$/.test(notacion)) {
         // Si movieron las negras (lleva "…"), el jaque es al rey blanco
-        marcarJaque(notacion.includes("…") ? "w" : "b");
+        control.marcarJaque(notacion.includes("…") ? "w" : "b");
       }
     }
 
@@ -229,6 +240,7 @@
         nuevo.dataset.playing = "";
         tablero.replaceWith(nuevo);
         tablero = nuevo;
+        control = crearControl(tablero);
         if (textoJugada) textoJugada.textContent = "";
         tablero.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 450 });
         await esperar(1800);
@@ -239,8 +251,39 @@
   }
 
 
+  /* ---------- 6. Problema táctico: "Ver solución" mueve la pieza ----------
+     El botón es un <details>, que el navegador abre y cierra sin JavaScript.
+     Aquí solo escuchamos cuándo se abre o se cierra para animar el tablero. */
+  function iniciarProblemas() {
+    if (!Element.prototype.animate) return;
+
+    document.querySelectorAll("[data-puzzle]").forEach((caja) => {
+      const detalles = caja.querySelector("details");
+      const solucion = caja.dataset.puzzle;               // p. ej. "a1a8"
+      if (!detalles || !/^[a-h][1-8][a-h][1-8]$/.test(solucion)) return;  // formato esperado
+
+      let tablero = caja.querySelector(".board");
+      const posicionInicial = tablero.cloneNode(true);
+
+      detalles.addEventListener("toggle", async () => {
+        if (detalles.open) {
+          const control = crearControl(tablero);
+          await control.mover(solucion.slice(0, 2), solucion.slice(2, 4));
+          control.marcarJaque(caja.dataset.mated === "w" ? "w" : "b");
+        } else {
+          // Al ocultar la solución, el tablero vuelve a la posición del problema
+          const nuevo = posicionInicial.cloneNode(true);
+          tablero.replaceWith(nuevo);
+          tablero = nuevo;
+        }
+      });
+    });
+  }
+
+
   iniciarRotador();
   iniciarApariciones();
   iniciarContadores();
   iniciarTablero();
+  iniciarProblemas();
 })();
