@@ -3,27 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>{% block title %}ChessLab{% endblock %}</title>
+  {# Todo se sirve desde nuestro propio servidor (/static): sin CDN de terceros #}
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {# Cada página puede añadir aquí su propia hoja de estilos (también de /static) #}
+  {% block head %}{% endblock %}
 </head>
-<body style="background:#1c1f24;color:#e6e6e6;font-family:sans-serif;margin:2rem">
-  <nav style="display:flex;gap:1rem;align-items:center;margin-bottom:2rem">
-    <a href="{{ url_for('main.index') }}" style="color:#34d399;font-weight:bold">ChessLab</a>
-    {% if g.user %}
-      <a href="{{ url_for('auth.profile') }}" style="color:#e6e6e6">Perfil</a>
-      <form method="post" action="{{ url_for('auth.logout') }}" style="margin:0">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Salir ({{ g.user.username }})</button>
-      </form>
-    {% else %}
-      <a href="{{ url_for('auth.login') }}" style="color:#e6e6e6">Entrar</a>
-      <a href="{{ url_for('auth.register') }}" style="color:#e6e6e6">Registrarse</a>
-    {% endif %}
-  </nav>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
-  {% for message in get_flashed_messages() %}
-    <p style="color:#fbbf24">{{ message }}</p>
-  {% endfor %}
+  {# Macro: enlace del menú que se marca como "activo" en la página actual #}
+  {% macro nav_link(endpoint, label) -%}
+    <a class="nav-link{% if request.endpoint == endpoint %} is-active{% endif %}"
+       href="{{ url_for(endpoint) }}"
+       {%- if request.endpoint == endpoint %} aria-current="page"{% endif %}>{{ label }}</a>
+  {%- endmacro %}
 
-  {% block content %}{% endblock %}
+  <header class="site-nav">
+    <nav class="container nav-inner" aria-label="Principal">
+      <a class="brand" href="{{ url_for('main.index') }}">
+        <img class="brand-mark" src="{{ url_for('static', filename='img/logo.svg') }}" alt="" width="30" height="30">
+        <span>Chess<span class="brand-accent">Lab</span></span>
+      </a>
+
+      {# Menú móvil: casilla oculta + botón de tres rayas (solo CSS, sin JavaScript) #}
+      <input class="nav-toggle" type="checkbox" id="nav-toggle" aria-label="Mostrar u ocultar el menú">
+      <label class="nav-burger" for="nav-toggle" aria-hidden="true"><span></span><span></span><span></span></label>
+
+      <div class="nav-menu">
+        {{ nav_link('main.index', 'Inicio') }}
+
+        {% if g.user %}
+          {{ nav_link('auth.profile', 'Perfil') }}
+          <span class="nav-sep" aria-hidden="true"></span>
+          <span class="nav-user">
+            <span class="avatar" aria-hidden="true">{{ g.user.username[0] | upper }}</span>
+            {{ g.user.username }}
+            {% if g.user.is_premium %}<span class="badge-pro" title="Cuenta PRO">PRO</span>{% endif %}
+          </span>
+          {# Cerrar sesión es un POST con token CSRF, nunca un simple enlace GET #}
+          <form class="nav-form" method="post" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost btn-sm" type="submit">Salir</button>
+          </form>
+        {% else %}
+          {{ nav_link('auth.login', 'Entrar') }}
+          <a class="btn btn-primary btn-sm" href="{{ url_for('auth.register') }}">Crear cuenta</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+
+  {# Avisos (flash). Jinja escapa {{ message }} automáticamente: protege de XSS.
+     La categoría solo puede ser una de tres conocidas; cualquier otra pasa a "info". #}
+  <div class="toast-stack" aria-live="polite">
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+      {% set kind = category if category in ('error', 'success', 'info') else 'info' %}
+      <div class="toast toast--{{ kind }}" role="{{ 'alert' if kind == 'error' else 'status' }}">
+        <p class="toast-text">{{ message }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <main id="contenido" class="site-main">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>ChessLab · proyecto educativo de Puesta en Producción Segura</span>
+      <span class="footer-muted">Laboratorio local · solo localhost</span>
+    </div>
+  </footer>
+
+  {# Scripts de cada página: siempre archivos de /static, nunca <script> en línea #}
+  {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,270 @@
+/* ==========================================================================
+   ChessLab · estilos de la portada (solo se cargan en index.html)
+   ========================================================================== */
+
+/* ---------- 1. Hero: texto a la izquierda, tablero a la derecha ---------- */
+.hero {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  padding: clamp(1rem, 4vw, 3rem) 0 clamp(2rem, 5vw, 4rem);
+}
+
+.hero-title {
+  font-size: clamp(2.3rem, 1.4rem + 3.4vw, 4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  margin-bottom: 1.25rem;
+}
+
+.hero-lead {
+  max-width: 34rem;
+  font-size: 1.12rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.75rem; }
+
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: .4rem 1.4rem;
+  margin: 0; padding: 0; list-style: none;
+  font-size: .9rem; color: var(--text-muted);
+}
+.hero-meta li { display: inline-flex; align-items: center; gap: .45rem; }
+.hero-meta li::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Las piezas del texto (♞, ♝...) con una fuente que tenga esos símbolos */
+.eyebrow, .feature-icon, .piece {
+  font-variant-emoji: text;
+}
+
+/* ---------- 2. Tablero decorativo ---------- */
+.hero-board { margin: 0; justify-self: center; width: min(460px, 100%); perspective: 1200px; }
+
+.board-frame {
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #2a3038, #171a1f);
+  border: 1px solid var(--border-strong);
+  box-shadow:
+    0 30px 60px -20px rgba(0, 0, 0, .7),
+    0 0 0 1px rgba(255, 255, 255, .03) inset,
+    0 0 80px -20px rgba(52, 211, 153, .35);
+  /* Ligeramente inclinado; al pasar el ratón se endereza */
+  transform: rotateX(8deg) rotateY(-10deg);
+  transition: transform .6s var(--ease), box-shadow .6s var(--ease);
+  animation: board-in .9s var(--ease) both;
+}
+.hero-board:hover .board-frame {
+  transform: rotateX(0) rotateY(0);
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .7), 0 0 100px -10px rgba(52, 211, 153, .45);
+}
+@keyframes board-in {
+  from { opacity: 0; transform: rotateX(20deg) rotateY(-14deg) translateY(24px); }
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);     /* 8 filas iguales, tengan piezas o no */
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;            /* las casillas miden su posición respecto al tablero */
+  container-type: inline-size;   /* las piezas se escalan según el ancho del tablero */
+}
+
+.sq { position: relative; display: grid; place-items: center; min-width: 0; min-height: 0; }
+.sq--light { background: #cdd8d2; }
+.sq--dark  { background: #4e7a6c; }
+/* Casillas de la última jugada, con un tinte cian */
+.sq--last::before {
+  content: ""; position: absolute; inset: 0;
+  background: rgba(34, 211, 238, .38);
+}
+
+/* Coordenadas (a-h, 1-8) en las esquinas, como en los tableros de verdad */
+.coord {
+  position: absolute; z-index: 1;
+  font-size: 2.3cqi; font-weight: 700; line-height: 1;
+}
+.coord--rank { top: 4%; left: 6%; }
+.coord--file { bottom: 4%; right: 6%; }
+.sq--light .coord { color: #4e7a6c; }
+.sq--dark  .coord { color: #cdd8d2; }
+
+.piece {
+  grid-area: 1 / 1;              /* si hay dos piezas un instante (captura), se superponen */
+  position: relative; z-index: 2;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", "Arial Unicode MS", serif;
+  font-size: 9.5cqi;
+  line-height: 1;
+  user-select: none;
+  animation: piece-in .5s var(--ease) both;
+  animation-delay: .35s;
+}
+.piece--w {
+  color: #fbfaf6;
+  text-shadow: 0 0 1px #111, 0 1px 0 #111, 0 2px 4px rgba(0, 0, 0, .45);
+}
+.piece--b {
+  color: #15181c;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .25), 0 2px 4px rgba(0, 0, 0, .35);
+}
+@keyframes piece-in { from { opacity: 0; transform: translateY(-10%) scale(.9); } }
+
+/* Mientras se juega la partida, sin animación de entrada (si no, cada pieza
+   que se mueve volvería a "aparecer") */
+.board[data-playing] .piece { animation: none; }
+.piece.is-moving { z-index: 5; }               /* la pieza que se mueve pasa por encima */
+
+/* Rey en jaque: brillo rojo bajo la pieza */
+.sq--check::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background: radial-gradient(circle, rgba(248, 113, 113, .95) 0%, rgba(248, 113, 113, .55) 40%, transparent 72%);
+  animation: check-in .3s var(--ease);
+}
+@keyframes check-in { from { opacity: 0; } }
+
+.board-caption {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .3rem .55rem;
+  margin-top: 1.1rem;
+  font-size: .9rem; color: var(--text-muted);
+}
+.board-caption > span { white-space: nowrap; }
+.caption-move {
+  font-family: var(--font-mono); font-weight: 700; font-size: .85rem;
+  color: var(--accent);
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 0 0 rgba(34, 211, 238, .6);
+  animation: pulse 2.2s ease-out infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 211, 238, .55); }
+  100% { box-shadow: 0 0 0 10px rgba(34, 211, 238, 0); }
+}
+
+/* ---------- 3. Palabra que cambia en el título ---------- */
+.rotator {
+  display: inline-block;
+  transition: opacity .35s var(--ease), transform .35s var(--ease);
+}
+.rotator.is-out { opacity: 0; transform: translateY(-.3em); }
+
+/* ---------- 4. El ajedrez en números ---------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;                                     /* el hueco de 1px hace de línea separadora */
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.stat {
+  display: flex; flex-direction: column; gap: .45rem;
+  padding: 1.6rem 1.4rem;
+  background: var(--bg-elev);
+}
+.stat-num {
+  font-size: clamp(1.9rem, 1.3rem + 1.8vw, 2.7rem);
+  font-weight: 800; line-height: 1; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;           /* las cifras no "bailan" al contar */
+}
+.stat-num sup { font-size: .5em; vertical-align: .9em; line-height: 0; margin-left: .05em; }
+.stat-label { font-size: .9rem; color: var(--text-muted); line-height: 1.4; }
+.stat--live .stat-num { color: var(--accent); }
+.live-dot {
+  display: inline-block; width: 7px; height: 7px; margin-right: .45rem;
+  border-radius: 50%; background: var(--accent);
+  vertical-align: .1em;
+  animation: pulse-green 2s ease-out infinite;
+}
+@keyframes pulse-green {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, .6); }
+  100% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+}
+
+/* ---------- 5. Aparecer al hacer scroll ----------
+   Solo se ocultan si JavaScript está activo (clase .js en <html>).
+   Se usa "backwards" para que, al terminar, la tarjeta vuelva a sus estilos
+   normales y el efecto hover siga funcionando. */
+.js .reveal { opacity: 0; }
+.js .reveal.is-visible { opacity: 1; animation: reveal-in .75s var(--ease) backwards; }
+.js .feature-grid > .reveal:nth-child(2).is-visible { animation-delay: .12s; }
+.js .feature-grid > .reveal:nth-child(3).is-visible { animation-delay: .24s; }
+@keyframes reveal-in { from { opacity: 0; transform: translateY(22px); } }
+
+/* ---------- 6. Secciones ---------- */
+.section { padding: clamp(2rem, 5vw, 3.5rem) 0; }
+.section-head { max-width: 40rem; margin-bottom: 2rem; }
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+}
+
+.feature {
+  display: flex; flex-direction: column;
+  transition: transform .3s var(--ease), border-color .3s, box-shadow .3s;
+}
+.feature:hover {
+  transform: translateY(-4px);
+  border-color: rgba(52, 211, 153, .4);
+  box-shadow: var(--shadow), 0 0 40px -15px rgba(52, 211, 153, .5);
+}
+.feature p { color: var(--text-muted); flex: 1; }
+.feature h3 { display: flex; align-items: center; gap: .5rem; }
+
+.feature-icon {
+  display: grid; place-items: center;
+  width: 52px; height: 52px; margin-bottom: 1.1rem;
+  border-radius: 14px;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", serif;
+  font-size: 1.9rem; line-height: 1;
+  color: var(--accent);
+  background: rgba(52, 211, 153, .1);
+  border: 1px solid rgba(52, 211, 153, .25);
+}
+.feature--pro .feature-icon {
+  color: var(--gold);
+  background: rgba(245, 196, 81, .1);
+  border-color: rgba(245, 196, 81, .3);
+}
+.feature--pro:hover {
+  border-color: rgba(245, 196, 81, .45);
+  box-shadow: var(--shadow), 0 0 40px -15px rgba(245, 196, 81, .5);
+}
+
+.feature-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* ---------- 7. Llamada final ---------- */
+.cta {
+  text-align: center;
+  padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(52, 211, 153, .3);
+  background:
+    radial-gradient(ellipse 70% 120% at 50% 0%, rgba(52, 211, 153, .16), transparent 70%),
+    var(--bg-elev);
+}
+.cta .muted { margin-bottom: 1.5rem; }
+
+/* ---------- 8. Móvil ---------- */
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; text-align: left; }
+  .hero-board { width: min(420px, 100%); }
+  .board-frame { transform: none; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}

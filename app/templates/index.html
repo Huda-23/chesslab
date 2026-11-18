@@ -1,9 +1,151 @@
 {% extends "base.html" %}
+
+{% block title %}ChessLab · Juega, aprende y entiende el ajedrez{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
 {% block content %}
-  <h1>ChessLab</h1>
-  {% if g.user %}
-    <p>Hola, {{ g.user.username }}.</p>
-  {% else %}
-    <p>Regístrate o inicia sesión para empezar.</p>
-  {% endif %}
+
+{# ===================== 1. Cabecera (hero) ===================== #}
+<section class="hero">
+  <div class="hero-text">
+    {% if g.user %}
+      <p class="eyebrow">♞&#xFE0E; Hola de nuevo, {{ g.user.username }}</p>
+    {% else %}
+      <p class="eyebrow">♞&#xFE0E; Laboratorio de ajedrez</p>
+    {% endif %}
+
+    {# data-rotate: palabras que home.js va alternando. Sin JavaScript se queda "entiende". #}
+    <h1 class="hero-title">
+      Juega, aprende y
+      <span class="rotator text-gradient" data-rotate="entiende,disfruta,practica">entiende</span>
+      el ajedrez.
+    </h1>
+
+    <p class="hero-lead">
+      Partidas contra un bot, una academia para empezar desde cero
+      y tu historial guardado en un solo sitio.
+    </p>
+
+    <div class="hero-actions">
+      {% if g.user %}
+        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.profile') }}">Ver mi perfil</a>
+        <span class="btn btn-ghost btn-lg is-disabled" aria-disabled="true">Jugar · próximamente</span>
+      {% else %}
+        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}">Crear cuenta gratis</a>
+        <a class="btn btn-ghost btn-lg" href="{{ url_for('auth.login') }}">Ya tengo cuenta</a>
+      {% endif %}
+    </div>
+
+    <ul class="hero-meta">
+      <li>Gratis</li>
+      <li>Sin anuncios</li>
+      <li>Para todos los niveles</li>
+    </ul>
+  </div>
+
+  {# Tablero: routes.py lo genera con la posición inicial. home.js reproduce encima
+     la "Partida de la Ópera" (Morphy, 1858). Sin JavaScript se ve la posición inicial.
+     data-sq: nombre de cada casilla, para que el script sepa dónde mover. #}
+  <figure class="hero-board" data-autoplay>
+    <div class="board-frame">
+      <div class="board" aria-hidden="true">
+        {% for fila in tablero %}
+          {% for casilla in fila %}
+            <div class="sq {{ 'sq--light' if casilla.clara else 'sq--dark' }}" data-sq="{{ casilla.nombre }}">
+              {% if casilla.nombre[0] == 'a' %}<span class="coord coord--rank">{{ casilla.nombre[1] }}</span>{% endif %}
+              {% if casilla.nombre[1] == '1' %}<span class="coord coord--file">{{ casilla.nombre[0] }}</span>{% endif %}
+              {% if casilla.pieza %}<span class="piece piece--{{ casilla.color }}">{{ casilla.pieza }}</span>{% endif %}
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+    <figcaption class="board-caption">
+      <span class="dot" aria-hidden="true"></span>
+      <span>Partida de la Ópera · Morphy, París 1858</span>
+      <span class="caption-move" data-board-move></span>
+    </figcaption>
+  </figure>
+</section>
+
+{# ===================== 2. El ajedrez en números ===================== #}
+{# data-count: número final al que llega el contador animado. El HTML ya trae
+   el número escrito, así que sin JavaScript también se ve bien. #}
+<section class="stats reveal" aria-label="El ajedrez en números">
+  <div class="stat">
+    <span class="stat-num" data-count="20">20</span>
+    <span class="stat-label">primeras jugadas posibles para las blancas</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num" data-count="400">400</span>
+    <span class="stat-label">posiciones distintas tras una jugada de cada bando</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">10<sup>120</sup></span>
+    <span class="stat-label">partidas posibles, según la estimación de Claude Shannon</span>
+  </div>
+  <div class="stat stat--live">
+    <span class="stat-num" data-count="{{ partidas_jugadas }}">{{ partidas_jugadas }}</span>
+    <span class="stat-label"><span class="live-dot" aria-hidden="true"></span>partidas jugadas en ChessLab</span>
+  </div>
+</section>
+
+{# ===================== 3. Qué ofrece ChessLab ===================== #}
+<section class="section" aria-labelledby="titulo-funciones">
+  <div class="section-head reveal">
+    <p class="eyebrow">Qué encontrarás</p>
+    <h2 id="titulo-funciones">Todo lo que necesitas para mejorar</h2>
+  </div>
+
+  <div class="feature-grid">
+    <article class="card feature reveal">
+      <div class="feature-icon" aria-hidden="true">♟&#xFE0E;</div>
+      <h3>Juega contra el bot</h3>
+      <p>Partidas contra un motor de ajedrez. Cada partida se guarda con su resultado y su PGN para que puedas repasarla.</p>
+      <div class="feature-tags">
+        <span class="tag">Requiere cuenta</span>
+        <span class="tag tag--soon">Próximamente</span>
+      </div>
+    </article>
+
+    <article class="card feature reveal">
+      <div class="feature-icon" aria-hidden="true">♝&#xFE0E;</div>
+      <h3>Academia</h3>
+      <p>Aprende cómo se mueve cada pieza, qué es el jaque, el mate o el enroque, y practica aperturas clásicas en el tablero.</p>
+      <div class="feature-tags">
+        <span class="tag tag--open">Pública</span>
+        <span class="tag tag--soon">Próximamente</span>
+      </div>
+    </article>
+
+    <article class="card feature feature--pro reveal">
+      <div class="feature-icon" aria-hidden="true">♛&#xFE0E;</div>
+      <h3>ChessLab <span class="badge-pro">PRO</span></h3>
+      <p>Elige la dificultad del bot, desbloquea una apertura exclusiva y luce la insignia dorada junto a tu nombre.</p>
+      <div class="feature-tags">
+        <span class="tag">Requiere cuenta</span>
+        <span class="tag tag--soon">Próximamente</span>
+      </div>
+    </article>
+  </div>
+</section>
+
+{# ===================== 4. Llamada final (solo para visitantes) ===================== #}
+{% if not g.user %}
+<section class="section">
+  <div class="cta reveal">
+    <h2>¿Te animas con tu primera partida?</h2>
+    <p class="muted">Crear una cuenta tarda menos que una apertura.</p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}">Crear cuenta gratis</a>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 {% endblock %}
