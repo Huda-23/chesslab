@@ -1,12 +1,50 @@
 {% extends "base.html" %}
+
+{% block title %}Crear cuenta · ChessLab{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
 {% block content %}
-  <h1>Crear cuenta</h1>
-  <form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <p><label>Usuario<br>
-      <input name="username" required minlength="3" maxlength="20"></label></p>
-    <p><label>Contraseña (mínimo 8)<br>
-      <input name="password" type="password" required minlength="8" maxlength="128"></label></p>
-    <button type="submit">Registrarse</button>
-  </form>
+<section class="auth">
+  <div class="auth-card">
+    <div class="auth-icon" aria-hidden="true">♞&#xFE0E;</div>
+    <h1 class="auth-title">Crea tu cuenta</h1>
+    <p class="auth-sub">Gratis. Solo necesitas un usuario y una contraseña.</p>
+
+    {# Las reglas de aquí (pattern, minlength, maxlength) son solo una AYUDA para
+       el usuario: se pueden saltar desde el navegador. Las mismas reglas se
+       comprueban de verdad en el servidor (USERNAME_RE y la longitud en auth.py). #}
+    <form class="auth-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label class="field-label" for="username">Usuario</label>
+        <input id="username" name="username" required
+               minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}"
+               autocomplete="username" autocapitalize="none" spellcheck="false" autofocus
+               aria-describedby="username-hint">
+        <small class="field-hint" id="username-hint">De 3 a 20 caracteres: letras sin tilde, números o guion bajo (_).</small>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password">Contraseña</label>
+        {# autocomplete="new-password": el navegador puede proponer una contraseña segura #}
+        <input id="password" name="password" type="password" required
+               minlength="8" maxlength="128"
+               autocomplete="new-password" aria-describedby="password-hint">
+        <small class="field-hint" id="password-hint">Mínimo 8 caracteres. Mejor una frase larga que una palabra corta.</small>
+      </div>
+
+      <button class="btn btn-primary auth-submit" type="submit">Crear cuenta</button>
+    </form>
+
+    <p class="auth-note">Es un laboratorio de prácticas: usa datos ficticios y una contraseña que no uses en ningún otro sitio.</p>
+
+    <p class="auth-switch">
+      ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Entra aquí</a>
+    </p>
+  </div>
+</section>
 {% endblock %}

@@ -1,10 +1,42 @@
 {% extends "base.html" %}
+
+{% block title %}Entrar · ChessLab{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
 {% block content %}
-  <h1>Iniciar sesión</h1>
-  <form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <p><label>Usuario<br><input name="username" required></label></p>
-    <p><label>Contraseña<br><input name="password" type="password" required></label></p>
-    <button type="submit">Entrar</button>
-  </form>
+<section class="auth">
+  <div class="auth-card">
+    <div class="auth-icon" aria-hidden="true">♚&#xFE0E;</div>
+    <h1 class="auth-title">Bienvenido de nuevo</h1>
+    <p class="auth-sub">Entra para jugar y ver tu historial.</p>
+
+    {# "required" hace que el navegador avise si falta un campo, pero la
+       comprobación que cuenta es la del servidor (auth.py). #}
+    <form class="auth-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label class="field-label" for="username">Usuario</label>
+        {# autocomplete="username": el gestor de contraseñas sabe qué campo es #}
+        <input id="username" name="username" required maxlength="20"
+               autocomplete="username" autocapitalize="none" spellcheck="false" autofocus>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password">Contraseña</label>
+        <input id="password" name="password" type="password" required maxlength="128"
+               autocomplete="current-password">
+      </div>
+
+      <button class="btn btn-primary auth-submit" type="submit">Entrar</button>
+    </form>
+
+    <p class="auth-switch">
+      ¿Aún no tienes cuenta? <a href="{{ url_for('auth.register') }}">Crea una gratis</a>
+    </p>
+  </div>
+</section>
 {% endblock %}

@@ -86,10 +86,10 @@ def register():
                 current_app.logger.info(
                     "REGISTRO correcto: usuario=%s ip=%s",
                     username, request.remote_addr)
-                flash("Cuenta creada. Ya puedes iniciar sesión.")
+                flash("Cuenta creada. Ya puedes iniciar sesión.", "success")
                 return redirect(url_for("auth.login"))
 
-        flash(error)
+        flash(error, "error")
     return render_template("register.html")
 
 
@@ -108,7 +108,7 @@ def login():
             # %r escapa saltos de línea: evita inyección en los logs
             current_app.logger.warning(
                 "LOGIN fallido: usuario=%r ip=%s", username, request.remote_addr)
-            flash("Usuario o contraseña incorrectos.")
+            flash("Usuario o contraseña incorrectos.", "error")
         else:
             session.clear()
             session["user_id"] = user["id"]
