@@ -79,7 +79,8 @@
           <span>{{ niveles[nivel_basico] }}</span>
           <span class="badge-pro">PRO</span>
         </div>
-        <p class="side-note">Con ChessLab PRO puedes elegir entre {{ niveles.values() | join(', ') }}.</p>
+        <p class="side-note">Con ChessLab PRO puedes elegir entre {{ niveles.values() | join(', ') }}.
+          <a class="link-gold" href="{{ url_for('premium.premium') }}">Hazte PRO</a></p>
       {% endif %}
     </div>
 

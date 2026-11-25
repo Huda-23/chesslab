@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}ChessLab PRO{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/premium.css') }}">
+{% endblock %}
+
+{% block content %}
+{% set es_pro = g.user and g.user.is_premium %}
+
+{# ===================== Cabecera ===================== #}
+<header class="pro-hero">
+  <span class="pro-hero-crown" aria-hidden="true">♛&#xFE0E;</span>
+  <p class="eyebrow eyebrow--gold">ChessLab PRO</p>
+  <h1>Lleva tu juego <span class="text-gold">más lejos</span></h1>
+  <p class="pro-lead">
+    Juega contra Stockfish en el nivel que quieras, estudia una apertura exclusiva
+    y luce la insignia dorada. Todo lo demás sigue siendo gratis.
+  </p>
+</header>
+
+{# ===================== Ya es PRO ===================== #}
+{% if es_pro %}
+  <section class="card pro-status" aria-labelledby="titulo-estado">
+    <div class="pro-status-head">
+      <span class="avatar avatar--pro avatar--lg" aria-hidden="true">{{ g.user.username[0] | upper }}</span>
+      <div>
+        <h2 id="titulo-estado">Ya eres PRO, {{ g.user.username }} <span class="badge-pro">PRO</span></h2>
+        <p class="muted">Tienes todas las ventajas activadas. ¡A disfrutarlas!</p>
+      </div>
+    </div>
+    <div class="pro-status-actions">
+      <a class="btn btn-gold" href="{{ url_for('play.play') }}">Jugar en nivel Maestro</a>
+      <a class="btn btn-ghost" href="{{ url_for('learn.learn') }}#aperturas">Ver el Gambito de Rey</a>
+    </div>
+  </section>
+{% endif %}
+
+{# ===================== Planes ===================== #}
+<section class="plans" aria-label="Planes">
+  <article class="card plan-card">
+    <h2>Básico</h2>
+    <p class="plan-price"><strong>Gratis</strong></p>
+    <ul class="plan-features">
+      <li class="yes">Partidas contra el bot (nivel Media)</li>
+      <li class="yes">Academia: piezas, reglas y 3 aperturas</li>
+      <li class="yes">Historial y estadísticas</li>
+      <li class="no">Elegir la dificultad del bot</li>
+      <li class="no">Apertura exclusiva</li>
+      <li class="no">Insignia dorada</li>
+    </ul>
+    {% if g.user and not es_pro %}
+      <p class="plan-current">Tu plan actual</p>
+    {% elif not g.user %}
+      <a class="btn btn-ghost btn-block" href="{{ url_for('auth.register') }}">Crear cuenta gratis</a>
+    {% endif %}
+  </article>
+
+  <article class="card plan-card plan-card--pro">
+    <span class="plan-ribbon">Recomendado</span>
+    <h2>PRO <span class="badge-pro">PRO</span></h2>
+    <p class="plan-price"><strong>{{ precio }}</strong> <span>{{ periodo }}</span></p>
+    <ul class="plan-features">
+      <li class="yes">Todo lo del plan Básico</li>
+      {% for titulo, detalle in ventajas %}
+        <li class="yes gold-check"><span><strong>{{ titulo }}</strong> · {{ detalle }}</span></li>
+      {% endfor %}
+    </ul>
+    {% if es_pro %}
+      <p class="plan-current plan-current--gold">Tu plan actual</p>
+    {% elif g.user %}
+      <a class="btn btn-gold btn-block" href="#pago">Hazte PRO</a>
+    {% else %}
+      {# Pide sesión y, tras el login, vuelve directo al pago #}
+      <a class="btn btn-gold btn-block" href="{{ url_for('premium.pagar') }}">Hazte PRO</a>
+    {% endif %}
+  </article>
+</section>
+
+{# ===================== Pago simulado ===================== #}
+{% if g.user and not es_pro %}
+<section class="checkout" id="pago" aria-labelledby="titulo-pago">
+  <h2 id="titulo-pago">Pago <span class="tag tag--soon">Simulado</span></h2>
+
+  <div class="checkout-grid">
+    <form class="card checkout-form" method="post" action="{{ url_for('premium.activar') }}" data-pago novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="notice" role="note">
+        <strong>Esto es una simulación.</strong> No introduzcas una tarjeta real:
+        usa la de prueba <code>4242 4242 4242 4242</code>, cualquier fecha futura y cualquier CVC.
+      </div>
+
+      {# Tarjeta de muestra: premium.js copia aquí lo que escribes (con textContent) #}
+      <div class="card-preview" aria-hidden="true">
+        <span class="card-chip"></span>
+        <span class="card-brand" data-vista-marca></span>
+        <span class="card-number" data-vista-numero>•••• •••• •••• ••••</span>
+        <span class="card-name" data-vista-titular>NOMBRE APELLIDO</span>
+        <span class="card-exp" data-vista-caducidad>MM/AA</span>
+      </div>
+
+      {# OJO: estos campos NO tienen atributo "name". El navegador no los envía:
+         los datos de la tarjeta nunca salen de tu equipo ni llegan al servidor.
+         autocomplete="off": que el navegador no ofrezca tus tarjetas reales. #}
+      <div class="field">
+        <label class="field-label" for="titular">Titular</label>
+        <input id="titular" type="text" autocomplete="off" maxlength="40"
+               required data-campo="titular" placeholder="Como aparece en la tarjeta">
+      </div>
+      <div class="field">
+        <label class="field-label" for="numero">Número de tarjeta</label>
+        <input id="numero" type="text" inputmode="numeric" autocomplete="off" maxlength="19"
+               required pattern="[0-9 ]{13,19}" data-campo="numero" placeholder="4242 4242 4242 4242">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label" for="caducidad">Caducidad</label>
+          <input id="caducidad" type="text" inputmode="numeric" autocomplete="off" maxlength="5"
+                 required pattern="(0[1-9]|1[0-2])/[0-9]{2}" data-campo="caducidad" placeholder="MM/AA">
+        </div>
+        <div class="field">
+          <label class="field-label" for="cvc">CVC</label>
+          <input id="cvc" type="password" inputmode="numeric" autocomplete="off" maxlength="4"
+                 required pattern="[0-9]{3,4}" data-campo="cvc" placeholder="123">
+        </div>
+      </div>
+      <p class="form-error" data-error role="alert" hidden></p>
+
+      {# Lo ÚNICO que se envía además del token CSRF #}
+      <label class="check">
+        <input type="checkbox" name="acepto" value="si" required>
+        <span>Entiendo que es un pago simulado y que no se cobra nada.</span>
+      </label>
+
+      <button class="btn btn-gold btn-block btn-lg" type="submit" data-pagar>
+        Pagar {{ precio }} <span class="muted-inline">(simulado)</span>
+      </button>
+    </form>
+
+    <aside class="card checkout-summary" aria-label="Resumen del pedido">
+      <h3>Resumen</h3>
+      <div class="summary-line"><span>ChessLab PRO · mensual</span><strong>{{ precio }}</strong></div>
+      <div class="summary-line summary-line--muted"><span>IVA incluido</span><span></span></div>
+      <hr>
+      <div class="summary-line summary-total"><span>Total hoy</span><strong>{{ precio }}</strong></div>
+      <div class="secure-box">
+        <p class="secure-title"><span aria-hidden="true">🔒&#xFE0E;</span> Tu tarjeta no llega a nuestro servidor</p>
+        <p>
+          Los campos de la tarjeta no se envían: solo viajan el token de seguridad y la casilla
+          de confirmación. Así es como debe hacerse en una tienda real, donde la tarjeta la
+          procesa directamente la pasarela de pago y la web nunca la ve ni la guarda.
+        </p>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endif %}
+
+{# ===================== Volver al plan Básico ===================== #}
+{% if es_pro %}
+<section class="pro-cancel">
+  <details>
+    <summary>¿Quieres volver al plan Básico?</summary>
+    <form method="post" action="{{ url_for('premium.cancelar') }}" class="pro-cancel-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p class="muted">Perderás la dificultad a elegir, la apertura exclusiva y la insignia. Tus partidas no se borran.</p>
+      <button class="btn btn-ghost btn-sm" type="submit">Volver al plan Básico</button>
+    </form>
+  </details>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+  {% if g.user and not g.user.is_premium %}
+    <script type="module" src="{{ url_for('static', filename='js/premium.js') }}"></script>
+  {% endif %}
+{% endblock %}

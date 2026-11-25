@@ -113,12 +113,13 @@
           <li>Apertura exclusiva en la academia</li>
           <li>Insignia dorada junto a tu nombre</li>
         </ul>
+        <a class="btn btn-ghost btn-sm plan-manage" href="{{ url_for('premium.premium') }}">Gestionar plan</a>
       </section>
     {% else %}
       <section class="card plan" aria-labelledby="titulo-plan">
         <h2 id="titulo-plan" class="side-title">Tu plan: Básico</h2>
         <p class="muted">Con <strong class="gold">ChessLab PRO</strong> eliges la dificultad del bot, desbloqueas una apertura exclusiva y consigues la insignia dorada.</p>
-        <span class="btn btn-ghost btn-block is-disabled" aria-disabled="true">Hazte PRO · próximamente</span>
+        <a class="btn btn-gold btn-block" href="{{ url_for('premium.premium') }}#pago">Hazte PRO</a>
       </section>
     {% endif %}
 

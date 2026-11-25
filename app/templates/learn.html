@@ -154,9 +154,7 @@
             <div class="opening-locked">
               <span class="lock-icon" aria-hidden="true">🔒&#xFE0E;</span>
               <p>Esta apertura es exclusiva de <strong>ChessLab PRO</strong>.</p>
-              {% if not g.user %}
-                <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.login') }}">Inicia sesión</a>
-              {% endif %}
+              <a class="btn btn-gold btn-sm" href="{{ url_for('premium.premium') }}">Ver ChessLab PRO</a>
             </div>
           {% else %}
             <p class="opening-note" data-comentario aria-live="polite">Pulsa ▶&#xFE0E; para ver la primera jugada.</p>

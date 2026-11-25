@@ -180,3 +180,4 @@
   .profile-stats { grid-template-columns: repeat(2, 1fr); }
   .profile-head .btn { width: 100%; }
 }
+.plan-manage { margin-top: 1rem; }

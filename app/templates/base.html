@@ -36,12 +36,13 @@
         {{ nav_link('main.index', 'Inicio') }}
         {{ nav_link('play.play', 'Jugar') }}
         {{ nav_link('learn.learn', 'Aprender') }}
+        {{ nav_link('premium.premium', 'PRO') }}
 
         {% if g.user %}
           {{ nav_link('auth.profile', 'Perfil') }}
           <span class="nav-sep" aria-hidden="true"></span>
           <span class="nav-user">
-            <span class="avatar" aria-hidden="true">{{ g.user.username[0] | upper }}</span>
+            <span class="avatar{% if g.user.is_premium %} avatar--pro{% endif %}" aria-hidden="true">{{ g.user.username[0] | upper }}</span>
             {{ g.user.username }}
             {% if g.user.is_premium %}<span class="badge-pro" title="Cuenta PRO">PRO</span>{% endif %}
           </span>

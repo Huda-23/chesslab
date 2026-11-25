@@ -1,0 +1,206 @@
+/* ==========================================================================
+   ChessLab · página PRO (/premium): planes y pago simulado
+   ========================================================================== */
+
+/* ---------- 1. Cabecera ---------- */
+.pro-hero {
+  position: relative;
+  padding: clamp(1rem, 4vw, 2.5rem) 0 clamp(1.75rem, 4vw, 2.75rem);
+  text-align: center;
+}
+/* Brillo dorado detrás del título */
+.pro-hero::before {
+  content: ""; position: absolute; z-index: -1;
+  inset: -10% 15% 20%;
+  background: radial-gradient(ellipse at center, rgba(245, 196, 81, .16), transparent 65%);
+  pointer-events: none;
+}
+.pro-hero-crown {
+  display: grid; place-items: center;
+  width: 64px; height: 64px; margin: 0 auto 1rem;
+  border-radius: 18px;
+  font-size: 2.1rem; color: #3a2a00;
+  background: linear-gradient(135deg, #ffe08a, var(--gold) 45%, #d99a1e);
+  box-shadow: 0 12px 34px -8px rgba(245, 196, 81, .55);
+  animation: corona-flota 4s ease-in-out infinite;
+}
+@keyframes corona-flota { 50% { transform: translateY(-6px) rotate(-4deg); } }
+
+.eyebrow--gold { color: var(--gold); }
+.pro-hero h1 {
+  font-size: clamp(2.1rem, 1.4rem + 3vw, 3.4rem);
+  font-weight: 800; letter-spacing: -.03em; line-height: 1.08;
+  margin-bottom: 1rem;
+}
+.pro-lead { max-width: 38rem; margin: 0 auto; font-size: 1.08rem; color: var(--text-muted); }
+
+/* ---------- 2. Estado "ya eres PRO" ---------- */
+.pro-status {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem;
+  margin-bottom: 2rem;
+  border-color: rgba(245, 196, 81, .45);
+  background:
+    radial-gradient(ellipse 60% 140% at 0% 0%, rgba(245, 196, 81, .14), transparent 65%),
+    linear-gradient(180deg, var(--surface), var(--bg-elev));
+}
+.pro-status-head { display: flex; align-items: center; gap: 1rem; }
+.pro-status h2 { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .2rem; font-size: 1.35rem; }
+.pro-status .muted { margin: 0; }
+.pro-status-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.avatar--lg {
+  width: 56px; height: 56px; font-size: 1.5rem; flex: none;
+  box-shadow: 0 0 0 3px var(--bg-elev), 0 0 0 5px rgba(245, 196, 81, .6);
+}
+
+/* ---------- 3. Planes ---------- */
+.plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  max-width: 860px; margin: 0 auto;
+}
+.plan-card { position: relative; display: flex; flex-direction: column; gap: 1rem; }
+.plan-card h2 { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: 1.35rem; }
+.plan-price { margin: 0; color: var(--text-muted); }
+.plan-price strong { font-size: 2.2rem; font-weight: 800; letter-spacing: -.02em; color: var(--text); }
+
+.plan-features { display: grid; gap: .6rem; margin: 0 0 auto; padding: 0; list-style: none; }
+.plan-features li { display: flex; gap: .6rem; color: var(--text-muted); font-size: .95rem; }
+.plan-features li::before { flex: none; width: 1.1rem; text-align: center; font-weight: 800; }
+.plan-features .yes::before { content: "✓"; color: var(--accent); }
+.plan-features .no { opacity: .55; }
+.plan-features .no::before { content: "✕"; color: var(--text-muted); }
+.plan-features .gold-check::before { color: var(--gold); }
+.plan-features strong { color: var(--text); }
+
+/* El plan PRO destaca: borde dorado, brillo y una cinta */
+.plan-card--pro {
+  border-color: rgba(245, 196, 81, .55);
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(245, 196, 81, .12), transparent 70%),
+    linear-gradient(180deg, var(--surface), var(--bg-elev));
+  box-shadow: var(--shadow), 0 0 60px -20px rgba(245, 196, 81, .45);
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+}
+.plan-card--pro:hover { transform: translateY(-4px); box-shadow: var(--shadow), 0 0 80px -15px rgba(245, 196, 81, .55); }
+.plan-ribbon {
+  position: absolute; top: -.75rem; right: 1.25rem;
+  padding: .25rem .7rem; border-radius: 999px;
+  font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: #3a2a00;
+  background: linear-gradient(135deg, #ffe08a, var(--gold) 45%, #d99a1e);
+}
+.plan-current {
+  margin: 0; padding: .7rem; border-radius: var(--radius-sm);
+  text-align: center; font-weight: 650; color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+}
+.plan-current--gold { color: var(--gold); border-color: rgba(245, 196, 81, .5); }
+
+/* ---------- 4. Pago simulado ---------- */
+.checkout {
+  max-width: 980px; margin: clamp(2.5rem, 6vw, 4rem) auto 0;
+  scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+.checkout h2 { display: flex; align-items: center; gap: .6rem; margin: 0 0 1.25rem; font-size: 1.6rem; }
+.checkout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 1.5rem; align-items: start;
+}
+.checkout-form { display: flex; flex-direction: column; gap: 1rem; }
+
+.notice {
+  padding: .8rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(34, 211, 238, .35);
+  background: rgba(34, 211, 238, .07);
+  font-size: .92rem; color: var(--text-muted);
+}
+.notice strong { color: var(--text); }
+.notice code {
+  padding: .1rem .35rem; border-radius: 5px;
+  font-family: var(--font-mono); color: var(--accent-2);
+  background: rgba(34, 211, 238, .1);
+}
+
+/* Tarjeta de muestra */
+.card-preview {
+  position: relative;
+  aspect-ratio: 1.586;                  /* proporción de una tarjeta real */
+  width: min(340px, 100%); align-self: center;
+  margin: .25rem 0 .5rem;
+  border-radius: 16px;
+  color: #fff;
+  font-family: var(--font-mono);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, .25), transparent 40%),
+    linear-gradient(135deg, #1f6f5c 0%, #0f3d34 50%, #3a2a00 120%);
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, .7), inset 0 0 0 1px rgba(255, 255, 255, .12);
+  overflow: hidden;
+}
+.card-preview > span { position: absolute; }
+.card-chip {
+  top: 22%; left: 8%; width: 13%; aspect-ratio: 1.3;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ffe08a, #d99a1e);
+}
+.card-brand { top: 10%; right: 8%; font-family: var(--font); font-weight: 800; font-style: italic; letter-spacing: .04em; }
+.card-number { top: 50%; left: 8%; font-size: clamp(.95rem, 3.6vw, 1.2rem); letter-spacing: .08em; }
+.card-name { bottom: 12%; left: 8%; max-width: 60%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .8rem; letter-spacing: .08em; opacity: .9; }
+.card-exp { bottom: 12%; right: 8%; font-size: .8rem; opacity: .9; }
+
+.field { display: flex; flex-direction: column; }
+.field-label { margin-bottom: .1rem; font-size: .9rem; font-weight: 600; color: var(--text); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.checkout-form input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(248, 113, 113, .18); }
+.form-error {
+  margin: 0; padding: .6rem .8rem; border-radius: var(--radius-sm);
+  font-size: .9rem; color: #fecaca;
+  background: rgba(248, 113, 113, .1); border: 1px solid rgba(248, 113, 113, .4);
+}
+
+.check { display: flex; align-items: flex-start; gap: .6rem; font-size: .92rem; color: var(--text-muted); cursor: pointer; }
+.check input { width: 1.1rem; height: 1.1rem; margin-top: .15rem; accent-color: var(--gold); flex: none; }
+
+.muted-inline { font-weight: 500; opacity: .75; }
+/* Botón "procesando": un brillo que lo recorre */
+.btn.is-loading { position: relative; overflow: hidden; }
+.btn.is-loading::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .55) 50%, transparent 70%);
+  animation: procesando 1s linear infinite;
+}
+@keyframes procesando { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* Resumen del pedido */
+.checkout-summary h3 { margin: 0 0 1rem; font-size: 1.1rem; }
+.summary-line { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
+.summary-line--muted { font-size: .85rem; color: var(--text-muted); }
+.checkout-summary hr { border: 0; border-top: 1px solid var(--border); margin: .9rem 0; }
+.summary-total { font-size: 1.1rem; }
+.summary-total strong { color: var(--gold); }
+.secure-box {
+  margin-top: 1.25rem; padding: 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(52, 211, 153, .3);
+  background: rgba(52, 211, 153, .06);
+}
+.secure-box p { margin: 0; font-size: .88rem; color: var(--text-muted); }
+.secure-box .secure-title { margin-bottom: .4rem; font-weight: 700; color: var(--text); }
+
+/* ---------- 5. Volver al plan Básico ---------- */
+.pro-cancel { max-width: 860px; margin: 2.5rem auto 0; text-align: center; }
+.pro-cancel summary { display: inline-block; cursor: pointer; font-size: .9rem; color: var(--text-muted); }
+.pro-cancel summary:hover { color: var(--text); }
+.pro-cancel-form { display: flex; flex-direction: column; align-items: center; gap: .6rem; margin-top: 1rem; }
+.pro-cancel-form .muted { margin: 0; font-size: .9rem; }
+
+/* ---------- 6. Móvil y movimiento reducido ---------- */
+@media (max-width: 760px) {
+  .plans, .checkout-grid { grid-template-columns: 1fr; }
+  .plan-card--pro { order: -1; }          /* en móvil, PRO primero */
+}
+@media (prefers-reduced-motion: reduce) {
+  .pro-hero-crown, .btn.is-loading::after { animation: none; }
+}
