@@ -9,6 +9,7 @@ from flask import (Blueprint, abort, current_app, flash, g, redirect,
                    render_template, request, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from . import seguridad
 from .db import get_db
 
 bp = Blueprint("auth", __name__)
@@ -73,6 +74,11 @@ def destino_seguro(ruta):
 @bp.route("/registro", methods=("GET", "POST"))
 def register():
     if request.method == "POST":
+        espera = seguridad.REGISTRO_IP.espera(request.remote_addr)
+        if espera:
+            current_app.logger.warning("REGISTRO bloqueado por límite: ip=%s", request.remote_addr)
+            flash(f"Demasiados registros desde tu red. Prueba en {espera // 60 + 1} min.", "error")
+            return render_template("register.html"), 429
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         error = None
@@ -96,6 +102,7 @@ def register():
                     "REGISTRO fallido (usuario existente): usuario=%s ip=%s",
                     username, request.remote_addr)
             else:
+                seguridad.REGISTRO_IP.registrar(request.remote_addr)
                 current_app.logger.info(
                     "REGISTRO correcto: usuario=%s ip=%s",
                     username, request.remote_addr)
@@ -112,6 +119,16 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
+        # Fuerza bruta: se comprueba ANTES de mirar la contraseña. Con el límite
+        # superado ni siquiera se consulta la base de datos ni se calcula el hash.
+        espera = max(seguridad.LOGIN_IP.espera(request.remote_addr),
+                     seguridad.LOGIN_USUARIO.espera(username.lower()))
+        if espera:
+            current_app.logger.warning(
+                "LOGIN bloqueado por límite: usuario=%r ip=%s", username, request.remote_addr)
+            flash(f"Demasiados intentos. Espera {espera // 60 + 1} min e inténtalo de nuevo.", "error")
+            return render_template("login.html"), 429, {"Retry-After": str(espera)}
+
         user = get_db().execute(
             "SELECT id, username, password_hash FROM users WHERE username = ?",
             (username,),
@@ -121,8 +138,11 @@ def login():
             # %r escapa saltos de línea: evita inyección en los logs
             current_app.logger.warning(
                 "LOGIN fallido: usuario=%r ip=%s", username, request.remote_addr)
+            seguridad.LOGIN_IP.registrar(request.remote_addr)
+            seguridad.LOGIN_USUARIO.registrar(username.lower())
             flash("Usuario o contraseña incorrectos.", "error")
         else:
+            seguridad.LOGIN_USUARIO.olvidar(username.lower())  # acertó: se borra su contador
             volver_a = session.get("volver_a")  # se lee ANTES de vaciar la sesión
             session.clear()
             session["user_id"] = user["id"]

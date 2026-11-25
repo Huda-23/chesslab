@@ -14,7 +14,7 @@ import re
 
 from flask import Blueprint, current_app, g, jsonify, render_template, request
 
-from . import motor
+from . import motor, seguridad
 from .auth import RESULTADOS, login_required
 from .db import get_db
 from .routes import PORTADA_FEN, fen_a_tablero
@@ -64,6 +64,14 @@ def play():
 @bp.get("/api/jugada-bot")
 @login_required
 def jugada_bot():
+    # Cada jugada lanza un proceso Stockfish (CPU): se limita por usuario.
+    clave = g.user["id"]
+    espera = seguridad.BOT_USUARIO.espera(clave)
+    if espera:
+        current_app.logger.warning("BOT limitado: usuario=%s", g.user["username"])
+        return seguridad.respuesta_429(espera)
+    seguridad.BOT_USUARIO.registrar(clave)
+
     fen = request.args.get("fen", "")
     if not FEN_RE.match(fen):
         return jsonify(error="Posición no válida"), 400

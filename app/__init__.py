@@ -3,7 +3,7 @@ import os
 
 from flask import Flask
 
-from . import auth, db, learn, motor, play, premium, routes
+from . import auth, db, learn, motor, play, premium, routes, seguridad
 
 
 def create_app():
@@ -20,9 +20,14 @@ def create_app():
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
+        # Con HTTPS (producción) se pone COOKIE_SECURE=1 en .env: la cookie de
+        # sesión entonces nunca viaja por HTTP sin cifrar. En localhost (HTTP)
+        # debe ir apagado o el navegador no la guardaría.
+        SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE") == "1",
     )
 
     db.init_app(app)
+    seguridad.init_app(app)
     app.register_blueprint(routes.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(play.bp)
