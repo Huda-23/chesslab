@@ -34,9 +34,25 @@
 /* ---------- 2. Tablero ---------- */
 .play-board { position: relative; }
 
-/* Cuando es tu turno, tus piezas muestran la mano al pasar el ratón */
-.board.is-turn .piece--w { cursor: pointer; }
+/* Cuando es tu turno, tus piezas muestran la mano de "agarrar" */
+.board.is-turn .piece--w { cursor: grab; }
 .board.is-turn .sq--dot, .board.is-turn .sq--capture { cursor: pointer; }
+
+/* En el tablero de juego el dedo arrastra piezas, no desplaza la página */
+.play .board { touch-action: none; }
+
+/* Pieza que estás arrastrando: por encima de todo y un poco más grande.
+   pointer-events: none deja "ver" la casilla que hay debajo al soltar. */
+.piece.is-dragging {
+  z-index: 50;
+  pointer-events: none;
+  scale: 1.12;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .45));
+}
+.board.is-dragging, .board.is-dragging * { cursor: grabbing !important; }
+
+/* Casilla sobre la que estás al arrastrar: marco blanco */
+.sq--hover { box-shadow: inset 0 0 0 .55cqi rgba(255, 255, 255, .8); }
 
 /* Pieza seleccionada */
 .sq--selected::before {

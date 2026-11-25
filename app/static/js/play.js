@@ -112,13 +112,23 @@ async function deslizar(desde, hasta) {
   pieza.classList.remove("is-moving");
 }
 
+// Pone la pieza en su nueva casilla sin animación (tras soltarla arrastrando)
+async function colocar(desde, hasta) {
+  const pieza = casilla(desde).querySelector(".piece");
+  if (!pieza) return;
+  const capturada = casilla(hasta).querySelector(".piece");
+  if (capturada) capturada.remove();
+  casilla(hasta).appendChild(pieza);
+}
+
 // Muestra en el tablero una jugada que chess.js YA ha aplicado
-async function mostrarJugada(jugada) {
+// arrastrada = true: la pieza ya está donde la soltaste, así que no se desliza
+async function mostrarJugada(jugada, arrastrada = false) {
   quitarClases("sq--last");
   casilla(jugada.from).classList.add("sq--last");
   casilla(jugada.to).classList.add("sq--last");
 
-  const animaciones = [deslizar(jugada.from, jugada.to)];
+  const animaciones = [arrastrada ? colocar(jugada.from, jugada.to) : deslizar(jugada.from, jugada.to)];
   const fila = jugada.from[1];
   if (jugada.flags.includes("k")) animaciones.push(deslizar("h" + fila, "f" + fila)); // enroque corto
   if (jugada.flags.includes("q")) animaciones.push(deslizar("a" + fila, "d" + fila)); // enroque largo
@@ -186,12 +196,22 @@ if (selectorNivel) {
 }
 
 
-/* ---------- 4. Tus jugadas: clic en una pieza y clic en el destino ---------- */
+/* ---------- 4. Tus jugadas: arrastrar la pieza, o clic en la pieza y clic en el destino ----------
+   Usamos Pointer Events: el mismo código sirve para ratón, dedo y lápiz.
+   - Pulsas una pieza tuya  -> se marcan sus casillas legales.
+   - Mantienes y mueves     -> la pieza sigue al cursor.
+   - Sueltas en casilla legal -> se juega. En otro sitio -> vuelve a su casilla.
+   - Si no la mueves (un clic normal), funciona como antes: clic en la pieza
+     y clic en el destino.
+   La legalidad la decide SIEMPRE chess.js; arrastrar solo cambia cómo eliges. */
+
+const UMBRAL_ARRASTRE = 4;     // px que hay que mover para que cuente como arrastre
+let arrastre = null;           // datos del arrastre en curso (o null)
 
 function deseleccionar() {
   seleccion = null;
   destinos = new Map();
-  quitarClases("sq--selected", "sq--dot", "sq--capture");
+  quitarClases("sq--selected", "sq--dot", "sq--capture", "sq--hover");
 }
 
 function seleccionar(nombre) {
@@ -205,21 +225,114 @@ function seleccionar(nombre) {
   }
 }
 
-tablero.addEventListener("click", (evento) => {
+const puedoMover = () => !terminada && !botPensando && juego.turn() === "w";
+
+// Casilla del tablero que hay bajo el puntero (o null si estás fuera)
+function casillaEnPunto(x, y) {
+  const el = document.elementFromPoint(x, y);
+  const sq = el ? el.closest(".sq") : null;
+  return sq && tablero.contains(sq) ? sq : null;
+}
+
+// Devuelve la pieza arrastrada a su casilla
+function soltarPieza() {
+  if (!arrastre) return;
+  const { pieza } = arrastre;
+  pieza.classList.remove("is-dragging");
+  pieza.style.transform = "";
+  tablero.classList.remove("is-dragging");
+  quitarClases("sq--hover");
+  arrastre = null;
+}
+
+tablero.addEventListener("pointerdown", (evento) => {
+  if (evento.button !== 0 || !puedoMover()) return;   // solo botón principal
   const sq = evento.target.closest(".sq");
-  if (!sq || terminada || botPensando || juego.turn() !== "w") return;
+  if (!sq) return;
   const nombre = sq.dataset.sq;
 
+  // Segundo clic de "clic-clic": ya había pieza elegida y pulsas un destino legal
   if (seleccion && destinos.has(nombre)) {
+    evento.preventDefault();
     moverYo(seleccion, nombre);
     return;
   }
+
   const pieza = juego.get(nombre);
-  if (pieza && pieza.color === "w" && nombre !== seleccion) seleccionar(nombre);
-  else deseleccionar();
+  if (!pieza || pieza.color !== "w") {
+    deseleccionar();
+    return;
+  }
+
+  evento.preventDefault();                 // evita seleccionar texto al arrastrar
+  const yaElegida = nombre === seleccion;
+  if (!yaElegida) seleccionar(nombre);
+
+  const elemento = sq.querySelector(".piece");
+  const caja = elemento.getBoundingClientRect();
+  arrastre = {
+    id: evento.pointerId,
+    desde: nombre,
+    pieza: elemento,
+    inicioX: evento.clientX,
+    inicioY: evento.clientY,
+    centroX: caja.left + caja.width / 2,
+    centroY: caja.top + caja.height / 2,
+    moviendo: false,
+    yaElegida,
+  };
+  // El tablero sigue recibiendo el puntero aunque salgas de él
+  tablero.setPointerCapture(evento.pointerId);
 });
 
-async function moverYo(desde, hasta) {
+tablero.addEventListener("pointermove", (evento) => {
+  if (!arrastre || evento.pointerId !== arrastre.id) return;
+  const dx = evento.clientX - arrastre.inicioX;
+  const dy = evento.clientY - arrastre.inicioY;
+
+  if (!arrastre.moviendo) {
+    if (Math.hypot(dx, dy) < UMBRAL_ARRASTRE) return;   // aún es un clic
+    arrastre.moviendo = true;
+    arrastre.pieza.classList.add("is-dragging");
+    tablero.classList.add("is-dragging");
+  }
+
+  // La pieza se centra bajo el cursor, como en chess.com
+  const x = evento.clientX - arrastre.centroX;
+  const y = evento.clientY - arrastre.centroY;
+  arrastre.pieza.style.transform = "translate(" + x + "px, " + y + "px)";
+
+  // Marca la casilla sobre la que estás
+  const encima = casillaEnPunto(evento.clientX, evento.clientY);
+  tablero.querySelectorAll(".sq--hover").forEach((el) => { if (el !== encima) el.classList.remove("sq--hover"); });
+  if (encima) encima.classList.add("sq--hover");
+});
+
+tablero.addEventListener("pointerup", (evento) => {
+  if (!arrastre || evento.pointerId !== arrastre.id) return;
+  const { desde, moviendo, yaElegida } = arrastre;
+
+  if (!moviendo) {
+    // Fue un clic sin arrastrar: si la pieza ya estaba elegida, se desmarca
+    soltarPieza();
+    if (yaElegida) deseleccionar();
+    return;
+  }
+
+  const destino = casillaEnPunto(evento.clientX, evento.clientY);
+  const hasta = destino ? destino.dataset.sq : null;
+  soltarPieza();
+  if (hasta && destinos.has(hasta)) {
+    moverYo(desde, hasta, true);
+  }
+  // Si no es un destino legal, la pieza ya ha vuelto y sigue elegida
+});
+
+// El sistema cancela el gesto (p. ej. cambia de ventana): la pieza vuelve
+tablero.addEventListener("pointercancel", soltarPieza);
+tablero.addEventListener("lostpointercapture", soltarPieza);
+
+async function moverYo(desde, hasta, arrastrada = false) {
   deseleccionar();
   let jugada;
   try {
@@ -231,7 +344,7 @@ async function moverYo(desde, hasta) {
   }
   botPensando = true;          // bloquea el tablero mientras se anima
   actualizarControles();
-  await mostrarJugada(jugada);
+  await mostrarJugada(jugada, arrastrada);
   if (await comprobarFinal()) return;
   await turnoDelBot();
 }
@@ -405,6 +518,7 @@ function restaurarRendirse() {
 }
 
 function nuevaPartida() {
+  soltarPieza();
   juego.reset();
   terminada = false;
   botPensando = false;
