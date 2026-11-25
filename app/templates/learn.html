@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% from "_tablero.html" import dibujar_tablero %}
+
+{% block title %}Academia · ChessLab{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/board.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{# ===================== Cabecera ===================== #}
+<header class="learn-hero">
+  <p class="eyebrow">♞&#xFE0E; Academia</p>
+  <h1>Aprende ajedrez <span class="text-gradient">desde cero</span></h1>
+  <p class="learn-lead">
+    Cómo se mueve cada pieza, las reglas que deciden una partida, tres aperturas
+    clásicas y dos problemas para poner a prueba lo aprendido. Todos los tableros
+    se pueden tocar: pulsa o arrastra las piezas.
+  </p>
+  <nav class="learn-index" aria-label="Secciones de la academia">
+    <a href="#piezas">Piezas</a>
+    <a href="#reglas">Reglas</a>
+    <a href="#aperturas">Aperturas</a>
+    <a href="#problemas">Problemas</a>
+    <a href="#opinion">Tu opinión</a>
+  </nav>
+</header>
+
+{# ===================== 1. Piezas ===================== #}
+<section class="learn-section" id="piezas" aria-labelledby="titulo-piezas">
+  <div class="learn-head">
+    <p class="eyebrow">Lección 1</p>
+    <h2 id="titulo-piezas">Cómo se mueve cada pieza</h2>
+  </div>
+
+  <div class="lesson" data-piezas>
+    <div class="lesson-board">
+      <div class="board-frame">
+        {{ dibujar_tablero(tablero_piezas, decorativo=False) }}
+      </div>
+    </div>
+
+    <div class="lesson-side">
+      {# Botones para elegir pieza. El FEN y la casilla son datos nuestros. #}
+      <div class="piece-picker" role="group" aria-label="Elige una pieza">
+        {% for p in piezas %}
+          <button class="piece-btn" type="button"
+                  data-pieza="{{ p.id }}" data-fen="{{ p.fen }}" data-casilla="{{ p.casilla }}"
+                  aria-pressed="{{ 'true' if p.id == pieza_inicial.id else 'false' }}">
+            <span class="piece-btn-icon" aria-hidden="true">{{ p.simbolo }}&#xFE0E;</span>
+            <span>{{ p.nombre }}</span>
+          </button>
+        {% endfor %}
+      </div>
+
+      {% for p in piezas %}
+        <div class="card piece-info" data-panel="{{ p.id }}" {% if p.id != pieza_inicial.id %}hidden{% endif %}>
+          <div class="piece-info-head">
+            <h3>{{ p.nombre }}</h3>
+            <span class="piece-value">{{ p.valor }}</span>
+          </div>
+          <p>{{ p.texto }}</p>
+        </div>
+      {% endfor %}
+
+      <p class="lesson-hint">
+        <span class="hint-dot" aria-hidden="true"></span>
+        Pulsa la pieza blanca para ver sus casillas y muévela las veces que quieras.
+      </p>
+      <button class="btn btn-ghost btn-sm" type="button" data-accion="reiniciar-pieza">Volver a colocar</button>
+    </div>
+  </div>
+</section>
+
+{# ===================== 2. Reglas ===================== #}
+<section class="learn-section" id="reglas" aria-labelledby="titulo-reglas">
+  <div class="learn-head">
+    <p class="eyebrow">Lección 2</p>
+    <h2 id="titulo-reglas">Las reglas que deciden una partida</h2>
+  </div>
+
+  <div class="rules-grid">
+    {% for r in reglas %}
+      <article class="card rule">
+        <div class="board-frame board-frame--sm">
+          {{ dibujar_tablero(r.tablero, resaltadas=r.origen, jaque=r.jaque) }}
+        </div>
+        <h3>{{ r.titulo }}</h3>
+        <p>{{ r.texto }}</p>
+      </article>
+    {% endfor %}
+
+    {# El enroque se practica: learn.js comprueba con chess.js que lo haces bien #}
+    <article class="card rule rule--practice" data-enroque data-fen="{{ enroque_fen }}">
+      <div class="board-frame board-frame--sm">
+        {{ dibujar_tablero(tablero_enroque, decorativo=False) }}
+      </div>
+      <h3>Enroque <span class="tag tag--open">Pruébalo</span></h3>
+      <p>
+        El rey se mueve dos casillas hacia una torre y la torre salta a su otro lado.
+        Solo se puede si ninguno de los dos se ha movido, no hay piezas entre ellos
+        y el rey no está en jaque ni pasa por casillas atacadas.
+      </p>
+      <p class="practice-status" data-estado aria-live="polite">Arrastra el rey dos casillas hacia una torre.</p>
+      <button class="btn btn-ghost btn-sm" type="button" data-accion="reiniciar" hidden>Repetir</button>
+    </article>
+  </div>
+</section>
+
+{# ===================== 3. Aperturas ===================== #}
+<section class="learn-section" id="aperturas" aria-labelledby="titulo-aperturas">
+  <div class="learn-head">
+    <p class="eyebrow">Lección 3</p>
+    <h2 id="titulo-aperturas">Aperturas clásicas, jugada a jugada</h2>
+  </div>
+
+  <div class="lesson" data-aperturas>
+    <div class="lesson-board">
+      <div class="board-frame">
+        {{ dibujar_tablero(tablero_inicial) }}
+      </div>
+      <div class="viewer-controls" role="group" aria-label="Moverse por la apertura">
+        <button class="btn btn-ghost btn-sm" type="button" data-ir="inicio" aria-label="Ir al principio">⏮&#xFE0E;</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-ir="atras" aria-label="Jugada anterior">◀&#xFE0E;</button>
+        <button class="btn btn-primary btn-sm" type="button" data-ir="adelante" aria-label="Jugada siguiente">▶&#xFE0E;</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-ir="final" aria-label="Ir al final">⏭&#xFE0E;</button>
+      </div>
+    </div>
+
+    <div class="lesson-side">
+      <div class="opening-tabs" role="group" aria-label="Elige una apertura">
+        {% for a in aperturas %}
+          <button class="opening-tab" type="button" data-apertura="{{ a.id }}"
+                  aria-pressed="{{ 'true' if loop.first else 'false' }}">
+            {{ a.nombre }}
+            {% if a.pro %}<span class="badge-pro">PRO</span>{% endif %}
+          </button>
+        {% endfor %}
+      </div>
+
+      {% for a in aperturas %}
+        <div class="card opening" data-panel-apertura="{{ a.id }}" {% if not loop.first %}hidden{% endif %}>
+          <h3>{{ a.nombre }}</h3>
+          <p class="muted">{{ a.resumen }}</p>
+
+          {% if a.bloqueada %}
+            {# A las cuentas básicas no se les envían las jugadas: solo esto #}
+            <div class="opening-locked">
+              <span class="lock-icon" aria-hidden="true">🔒&#xFE0E;</span>
+              <p>Esta apertura es exclusiva de <strong>ChessLab PRO</strong>.</p>
+              {% if not g.user %}
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.login') }}">Inicia sesión</a>
+              {% endif %}
+            </div>
+          {% else %}
+            <p class="opening-note" data-comentario aria-live="polite">Pulsa ▶&#xFE0E; para ver la primera jugada.</p>
+            <ol class="opening-moves">
+              {% for san, nota in a.jugadas %}
+                <li>
+                  <button class="opening-move" type="button" data-indice="{{ loop.index }}"
+                          data-san="{{ san }}" data-nota="{{ nota }}">
+                    <span class="move-num">{{ (loop.index0 // 2) + 1 }}{{ '.' if loop.index0 is even else '…' }}</span>
+                    {{ san | san_es }}
+                  </button>
+                </li>
+              {% endfor %}
+            </ol>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ===================== 4. Problemas ===================== #}
+<section class="learn-section" id="problemas" aria-labelledby="titulo-problemas">
+  <div class="learn-head">
+    <p class="eyebrow">Lección 4</p>
+    <h2 id="titulo-problemas">Ponte a prueba</h2>
+  </div>
+
+  <div class="puzzles-grid">
+    {% for t in tacticas %}
+      <article class="card puzzle" data-tactica data-fen="{{ t.fen }}"
+               data-tipo="{{ t.tipo }}" data-solucion="{{ t.solucion }}">
+        <div class="board-frame">
+          {{ dibujar_tablero(t.tablero, decorativo=False) }}
+        </div>
+        <h3>{{ t.titulo }}</h3>
+        <p>{{ t.enunciado }}</p>
+        <p class="practice-status" data-estado aria-live="polite">Mueven blancas. Arrastra o pulsa una pieza.</p>
+        <div class="puzzle-actions">
+          <button class="btn btn-ghost btn-sm" type="button" data-accion="reiniciar">Reintentar</button>
+          <details class="solution">
+            <summary class="btn btn-ghost btn-sm">Ver solución</summary>
+            <p class="solution-text">{{ t.explicacion }}</p>
+          </details>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+{# ===================== 5. Opinión ===================== #}
+<section class="learn-section" id="opinion" aria-labelledby="titulo-opinion">
+  <div class="learn-head">
+    <p class="eyebrow">Tu opinión</p>
+    <h2 id="titulo-opinion">¿Qué te ha parecido la academia?</h2>
+  </div>
+
+  {% if g.user %}
+    <div class="feedback">
+      <form class="card feedback-form" method="post" action="{{ url_for('learn.enviar_opinion') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="field-label" for="mensaje">Escribe lo que quieras: qué te ha gustado, qué falta, qué mejorarías…</label>
+        <textarea id="mensaje" name="mensaje" rows="5" required maxlength="{{ opinion_max }}"
+                  data-contador-max="{{ opinion_max }}"></textarea>
+        <div class="feedback-foot">
+          <small class="field-hint" data-contador>Máximo {{ opinion_max }} caracteres.</small>
+          <button class="btn btn-primary" type="submit">Enviar opinión</button>
+        </div>
+      </form>
+
+      <div class="feedback-mine">
+        <h3>Tus últimas opiniones</h3>
+        {% if opiniones %}
+          <ul class="feedback-list">
+            {% for o in opiniones %}
+              {# Jinja escapa el mensaje: si alguien escribe <script>, se ve como texto #}
+              <li class="card">
+                <p class="feedback-text">{{ o.message }}</p>
+                <time class="feedback-date">{{ o.created_at | fecha }}</time>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">Todavía no has enviado ninguna.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="card feedback-guest">
+      <p>Para enviar tu opinión necesitas una cuenta. El resto de la academia es libre.</p>
+      <div class="feedback-guest-actions">
+        <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+        <a class="btn btn-ghost" href="{{ url_for('auth.register') }}">Crear cuenta</a>
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', filename='js/learn.js') }}"></script>
+{% endblock %}

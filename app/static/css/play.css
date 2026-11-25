@@ -34,43 +34,7 @@
 /* ---------- 2. Tablero ---------- */
 .play-board { position: relative; }
 
-/* Cuando es tu turno, tus piezas muestran la mano de "agarrar" */
-.board.is-turn .piece--w { cursor: grab; }
-.board.is-turn .sq--dot, .board.is-turn .sq--capture { cursor: pointer; }
-
-/* En el tablero de juego el dedo arrastra piezas, no desplaza la página */
-.play .board { touch-action: none; }
-
-/* Pieza que estás arrastrando: por encima de todo y un poco más grande.
-   pointer-events: none deja "ver" la casilla que hay debajo al soltar. */
-.piece.is-dragging {
-  z-index: 50;
-  pointer-events: none;
-  scale: 1.12;
-  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .45));
-}
-.board.is-dragging, .board.is-dragging * { cursor: grabbing !important; }
-
-/* Casilla sobre la que estás al arrastrar: marco blanco */
-.sq--hover { box-shadow: inset 0 0 0 .55cqi rgba(255, 255, 255, .8); }
-
-/* Pieza seleccionada */
-.sq--selected::before {
-  content: ""; position: absolute; inset: 0;
-  background: rgba(52, 211, 153, .55);
-}
-/* Destino donde se captura: anillo en lugar de punto */
-.sq--capture::after {
-  content: ""; position: absolute; inset: 6%; z-index: 1;
-  border-radius: 50%;
-  border: .9cqi solid rgba(16, 24, 22, .38);
-}
-/* Al pasar por encima de un destino, se marca un poco más */
-.board.is-turn .sq--dot:hover::before,
-.board.is-turn .sq--capture:hover::before {
-  content: ""; position: absolute; inset: 0;
-  background: rgba(52, 211, 153, .25);
-}
+/* Los estilos de selección y arrastre están en board.css (los comparte /learn) */
 
 /* Panel de resultado sobre el tablero */
 .result-panel {

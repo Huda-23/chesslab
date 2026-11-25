@@ -3,7 +3,7 @@ import os
 
 from flask import Flask
 
-from . import auth, db, play, routes
+from . import auth, db, learn, play, routes
 
 
 def create_app():
@@ -26,4 +26,5 @@ def create_app():
     app.register_blueprint(routes.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(play.bp)
+    app.register_blueprint(learn.bp)
     return app

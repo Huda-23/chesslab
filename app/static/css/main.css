@@ -88,6 +88,10 @@ a:hover { color: var(--accent-2); }
 }
 .skip-link:focus { top: .75rem; }
 
+/* Un elemento con el atributo hidden se oculta siempre, aunque su clase
+   (p. ej. .btn) le ponga otro display */
+[hidden] { display: none !important; }
+
 /* ---------- 3. Barra de navegación fija ---------- */
 .site-nav {
   position: fixed; inset: 0 0 auto 0; z-index: 50;
@@ -366,3 +370,6 @@ main form:not([class]) button:not([class]) {
     transition-duration: .01ms !important;
   }
 }
+
+a.tag { text-decoration: none; }
+a.tag:hover { filter: brightness(1.2); }

@@ -117,7 +117,7 @@
       </div>
       <div class="feature-tags">
         <span class="tag tag--open">Pruébalo aquí</span>
-        <span class="tag tag--soon">Más problemas, próximamente</span>
+        <a class="tag tag--soon" href="{{ url_for('learn.learn') }}#problemas">Más problemas en la academia</a>
       </div>
     </div>
   </div>
@@ -135,7 +135,7 @@
       <h3>Aprende desde cero</h3>
       <p>Cómo se mueve cada pieza, cuánto vale y cómo captura. Por ejemplo, el caballo salta en forma de «L»: desde el centro puede ir a cualquiera de las 8 casillas marcadas, aunque haya piezas en medio.</p>
       <div class="showcase-actions">
-        <span class="btn btn-ghost is-disabled" aria-disabled="true">Ir a la academia · próximamente</span>
+        <a class="btn btn-primary" href="{{ url_for('learn.learn') }}">Ir a la academia</a>
       </div>
       <div class="feature-tags">
         <span class="tag tag--open">Pública</span>
