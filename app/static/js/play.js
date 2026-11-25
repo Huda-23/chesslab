@@ -5,8 +5,8 @@
      en /static/vendor y verificada con su hash). Este archivo solo dibuja el
      tablero y gestiona los clics.
    - La jugada del bot se pide a NUESTRO servidor (/api/jugada-bot), que a su
-     vez consulta a Stockfish Online. El navegador nunca habla con terceros.
-   - Si el servidor no da jugada (sin red, tiempo agotado, respuesta rara),
+     vez consulta a Stockfish, instalado DENTRO del contenedor. Nada sale a internet.
+   - Si el servidor no da jugada (motor caído, tiempo agotado, respuesta rara),
      el bot juega una jugada legal al azar: es el "plan B".
    - Igual que en home.js: nunca se usa innerHTML; solo textContent y nodos
      creados con createElement. Así ningún dato puede inyectar HTML.
@@ -386,7 +386,7 @@ async function turnoDelBot() {
   const inicio = performance.now();
 
   let jugada = null;
-  let fuente = "Stockfish Online";
+  let fuente = "Stockfish";
   const uci = await pedirJugadaAlServidor();
   if (uci) {
     try {

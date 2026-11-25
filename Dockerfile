@@ -3,6 +3,14 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+# Motor de ajedrez Stockfish, del repositorio oficial de Debian (paquetes
+# firmados y verificados por apt). Queda en /usr/games/stockfish.
+# --no-install-recommends: solo lo imprescindible. Después se borra la caché
+# de apt para que la imagen pese menos.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends stockfish \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /srv
 
 COPY requirements.txt .

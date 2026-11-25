@@ -3,7 +3,7 @@ import os
 
 from flask import Flask
 
-from . import auth, db, learn, play, routes
+from . import auth, db, learn, motor, play, routes
 
 
 def create_app():
@@ -27,4 +27,10 @@ def create_app():
     app.register_blueprint(auth.bp)
     app.register_blueprint(play.bp)
     app.register_blueprint(learn.bp)
+
+    # Aviso en el log si falta Stockfish (el bot jugaría al azar)
+    if motor.disponible():
+        app.logger.info("Stockfish listo: %s", motor.ruta_motor())
+    else:
+        app.logger.warning("Stockfish NO encontrado en %s: el bot jugará al azar", motor.ruta_motor())
     return app
