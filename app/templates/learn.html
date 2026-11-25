@@ -19,14 +19,18 @@
     clásicas y dos problemas para poner a prueba lo aprendido. Todos los tableros
     se pueden tocar: pulsa o arrastra las piezas.
   </p>
-  <nav class="learn-index" aria-label="Secciones de la academia">
-    <a href="#piezas">Piezas</a>
-    <a href="#reglas">Reglas</a>
-    <a href="#aperturas">Aperturas</a>
-    <a href="#problemas">Problemas</a>
-    <a href="#opinion">Tu opinión</a>
-  </nav>
 </header>
+
+{# Índice de secciones. Fuera de la cabecera para que pueda quedarse fijo
+   (sticky) al bajar. learn.js mueve la pastilla de color a la sección visible. #}
+<nav class="learn-index" aria-label="Secciones de la academia" data-secciones>
+  <span class="learn-index-pill" aria-hidden="true" data-pastilla></span>
+  <a href="#piezas">Piezas</a>
+  <a href="#reglas">Reglas</a>
+  <a href="#aperturas">Aperturas</a>
+  <a href="#problemas">Problemas</a>
+  <a href="#opinion">Tu opinión</a>
+</nav>
 
 {# ===================== 1. Piezas ===================== #}
 <section class="learn-section" id="piezas" aria-labelledby="titulo-piezas">

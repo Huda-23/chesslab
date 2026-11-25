@@ -18,6 +18,71 @@ function ponerEstado(el, texto, tipo = "") {
 }
 
 
+/* ---------- 0. Mini barra de secciones: pastilla que sigue a la sección visible ---------- */
+const indice = document.querySelector("[data-secciones]");
+if (indice) {
+  const pastilla = indice.querySelector("[data-pastilla]");
+  const enlaces = [...indice.querySelectorAll('a[href^="#"]')];
+  const secciones = enlaces.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  const suave = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  let activo = null;
+
+  // Coloca la pastilla debajo del enlace (solo posición y ancho, vía CSSOM)
+  function moverPastilla() {
+    if (!activo) { pastilla.classList.remove("is-on"); return; }
+    pastilla.style.width = activo.offsetWidth + "px";
+    pastilla.style.transform = "translateX(" + activo.offsetLeft + "px)";
+    pastilla.classList.add("is-on");
+  }
+
+  function marcar(enlace) {
+    if (enlace === activo) return;
+    enlaces.forEach((a) => a.toggleAttribute("aria-current", a === enlace));
+    if (enlace) enlace.setAttribute("aria-current", "location");
+    activo = enlace;
+    moverPastilla();
+    // En móvil la barra se desplaza de lado: que el enlace activo quede a la vista
+    if (enlace && indice.scrollWidth > indice.clientWidth) {
+      indice.scrollTo({ left: enlace.offsetLeft - indice.clientWidth / 2 + enlace.offsetWidth / 2, behavior: suave });
+    }
+  }
+
+  // ¿Qué sección ocupa la franja central de la pantalla?
+  const visibles = new Set();
+  function actualizar() {
+    // Al final de la página la última sección no llega a la franja central:
+    // si ya no se puede bajar más, se marca la última.
+    const alFinal = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+    const actual = alFinal ? secciones[secciones.length - 1]
+                           : secciones.find((sec) => visibles.has(sec));   // la primera en orden
+    marcar(actual ? enlaces[secciones.indexOf(actual)] : null);
+  }
+  const espia = new IntersectionObserver((entradas) => {
+    entradas.forEach((e) => (e.isIntersecting ? visibles.add(e.target) : visibles.delete(e.target)));
+    actualizar();
+  }, { rootMargin: "-35% 0px -60% 0px" });
+  secciones.forEach((sec) => espia.observe(sec));
+  window.addEventListener("scroll", actualizar, { passive: true });
+
+  // Sombra cuando la barra ya está pegada arriba (la cabecera ha salido de la vista)
+  const cabecera = document.querySelector(".learn-hero");
+  if (cabecera) {
+    new IntersectionObserver(([e]) => indice.classList.toggle("is-stuck", !e.isIntersecting))
+      .observe(cabecera);
+  }
+
+  // Clic en un enlace: desplazamiento suave hasta la sección
+  enlaces.forEach((a, i) => a.addEventListener("click", (evento) => {
+    if (!secciones[i]) return;
+    evento.preventDefault();
+    secciones[i].scrollIntoView({ behavior: suave, block: "start" });
+    history.replaceState(null, "", a.getAttribute("href"));
+  }));
+
+  window.addEventListener("resize", moverPastilla);
+}
+
+
 /* ---------- 1. Piezas: elige una y muévela libremente ---------- */
 const seccionPiezas = document.querySelector("[data-piezas]");
 if (seccionPiezas) {
