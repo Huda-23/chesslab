@@ -141,6 +141,7 @@
 @keyframes bob { 50% { transform: translateY(-5px); } }
 .empty-title { font-weight: 700; font-size: 1.1rem; margin-bottom: .4rem; }
 .empty .muted { max-width: 26rem; margin-inline: auto; }
+.empty-cta { margin-top: .5rem; }
 
 /* ---------- 5. Rendimiento ---------- */
 .winrate { margin-bottom: .75rem; color: var(--text-muted); }

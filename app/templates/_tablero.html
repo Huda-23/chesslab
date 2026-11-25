@@ -5,14 +5,15 @@
     tablero     -> lista de 8 filas de casillas (sale de fen_a_tablero)
     resaltadas  -> casillas con tinte esmeralda (p. ej. donde está la pieza)
     puntos      -> casillas con un punto (a dónde puede moverse una pieza)
+    decorativo  -> True: los lectores de pantalla lo ignoran (aria-hidden).
+                   False: es un tablero de juego y se anuncia como tal.
 
   Todo lo que se pinta aquí viene de nuestro propio código, y aun así Jinja
   lo escapa: si algún día llegara un dato raro, saldría como texto.
-  Es solo decoración para lectores de pantalla (aria-hidden); cada página
-  describe el tablero con texto al lado.
+  En la portada es decoración; en /play es el tablero de juego.
 #}
-{% macro dibujar_tablero(tablero, resaltadas=(), puntos=()) -%}
-<div class="board" aria-hidden="true">
+{% macro dibujar_tablero(tablero, resaltadas=(), puntos=(), decorativo=True) -%}
+<div class="board" {% if decorativo %}aria-hidden="true"{% else %}role="group" aria-label="Tablero de ajedrez"{% endif %}>
   {%- for fila in tablero %}{% for casilla in fila %}
   <div class="sq {{ 'sq--light' if casilla.clara else 'sq--dark' }}
     {%- if casilla.nombre in resaltadas %} sq--origin{% endif %}

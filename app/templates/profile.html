@@ -21,7 +21,7 @@
       <p class="profile-meta">Miembro desde el {{ miembro_desde | fecha }}</p>
     </div>
   </div>
-  <span class="btn btn-primary is-disabled" aria-disabled="true">Jugar · próximamente</span>
+  <a class="btn btn-primary" href="{{ url_for('play.play') }}">Jugar ahora</a>
 </section>
 
 {# ===================== 2. Estadísticas ===================== #}
@@ -75,6 +75,7 @@
         <div class="empty-icon" aria-hidden="true">♟&#xFE0E;</div>
         <p class="empty-title">Aún no has jugado ninguna partida</p>
         <p class="muted">Cuando juegues contra el bot, cada partida aparecerá aquí con su resultado, su fecha y su PGN. Solo tú puedes verlas.</p>
+        <a class="btn btn-primary empty-cta" href="{{ url_for('play.play') }}">Jugar mi primera partida</a>
       </div>
     {% endif %}
   </section>

@@ -1,0 +1,184 @@
+/* ==========================================================================
+   ChessLab · página de juego (/play)
+   Los estilos del tablero en sí están en board.css.
+   ========================================================================== */
+
+.play {
+  display: grid;
+  grid-template-columns: minmax(0, 600px) minmax(280px, 360px);
+  justify-content: center;
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  align-items: start;
+}
+
+/* ---------- 1. Jugadores (arriba el bot, abajo tú) ---------- */
+.player {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .55rem .25rem;
+  font-weight: 650;
+}
+.player-avatar {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", serif;
+  font-variant-emoji: text;
+  font-size: 1.2rem; line-height: 1;
+  color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+}
+.player-level, .player-color {
+  margin-left: auto;
+  font-size: .82rem; font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ---------- 2. Tablero ---------- */
+.play-board { position: relative; }
+
+/* Cuando es tu turno, tus piezas muestran la mano al pasar el ratón */
+.board.is-turn .piece--w { cursor: pointer; }
+.board.is-turn .sq--dot, .board.is-turn .sq--capture { cursor: pointer; }
+
+/* Pieza seleccionada */
+.sq--selected::before {
+  content: ""; position: absolute; inset: 0;
+  background: rgba(52, 211, 153, .55);
+}
+/* Destino donde se captura: anillo en lugar de punto */
+.sq--capture::after {
+  content: ""; position: absolute; inset: 6%; z-index: 1;
+  border-radius: 50%;
+  border: .9cqi solid rgba(16, 24, 22, .38);
+}
+/* Al pasar por encima de un destino, se marca un poco más */
+.board.is-turn .sq--dot:hover::before,
+.board.is-turn .sq--capture:hover::before {
+  content: ""; position: absolute; inset: 0;
+  background: rgba(52, 211, 153, .25);
+}
+
+/* Panel de resultado sobre el tablero */
+.result-panel {
+  position: absolute; inset: 0; z-index: 10;
+  display: grid; place-items: center;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(12, 14, 17, .62);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: fade-in .35s var(--ease);
+}
+.result-panel[hidden] { display: none; }
+@keyframes fade-in { from { opacity: 0; } }
+
+.result-card {
+  width: min(340px, 100%);
+  padding: 1.75rem 1.5rem 1.5rem;
+  text-align: center;
+  border-radius: 18px;
+  border: 1px solid var(--border-strong);
+  background: linear-gradient(180deg, var(--surface), var(--bg-elev));
+  box-shadow: var(--shadow);
+  animation: pop-in .45s var(--ease);
+}
+@keyframes pop-in { from { opacity: 0; transform: scale(.92) translateY(10px); } }
+
+.result-icon {
+  display: grid; place-items: center;
+  width: 64px; height: 64px; margin: 0 auto 1rem;
+  border-radius: 18px;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", serif;
+  font-variant-emoji: text;
+  font-size: 2.4rem; line-height: 1;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.result-title { margin-bottom: .3rem; font-size: 1.8rem; }
+.result-reason { color: var(--text-muted); margin-bottom: .6rem; }
+.result-saved { font-size: .85rem; color: var(--text-muted); min-height: 1.3em; margin-bottom: 1.25rem; }
+.result-actions { display: grid; gap: .6rem; }
+
+.result--victoria .result-title { color: var(--accent); }
+.result--victoria .result-icon  { color: var(--gold); border-color: rgba(245, 196, 81, .4); background: rgba(245, 196, 81, .1); }
+.result--derrota  .result-title { color: var(--danger); }
+.result--tablas   .result-title { color: #c3cad2; }
+
+/* ---------- 3. Panel lateral ---------- */
+.play-side { display: flex; flex-direction: column; gap: 1.25rem; padding: 1.25rem; }
+
+.status {
+  display: flex; align-items: center; gap: .6rem;
+  margin: 0;
+  padding: .8rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-weight: 600;
+}
+.status-dot {
+  flex: none; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent);
+}
+/* Mientras piensa el bot, el punto parpadea en cian */
+.status.is-thinking .status-dot { background: var(--accent-2); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.status.is-check .status-dot { background: var(--danger); }
+.status.is-over  .status-dot { background: var(--text-muted); }
+
+.side-heading {
+  margin: 0 0 .6rem;
+  font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.side-note { margin: .5rem 0 0; font-size: .82rem; color: var(--text-muted); }
+
+select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+                    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+select:disabled { opacity: .55; cursor: not-allowed; }
+
+.level-locked {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .7rem .9rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev); border: 1px solid var(--border);
+  font-weight: 600;
+}
+
+/* Lista de jugadas: número, blancas, negras */
+.side-block--moves { min-height: 0; }
+.moves {
+  margin: 0; padding: 0; list-style: none;
+  max-height: 260px; overflow-y: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: var(--font-mono); font-size: .9rem;
+  counter-reset: none;
+}
+.moves:empty { display: none; }
+.moves li {
+  display: grid; grid-template-columns: 2.6rem 1fr 1fr;
+  padding: .3rem .75rem;
+}
+.moves li:nth-child(odd) { background: rgba(255, 255, 255, .025); }
+.move-num { color: var(--text-muted); }
+.move.is-last { color: var(--accent); font-weight: 700; }
+.moves-empty { margin: 0; font-size: .88rem; color: var(--text-muted); }
+.moves-empty[hidden] { display: none; }
+
+.side-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.side-actions .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+/* Rendirse pide confirmación: al primer clic se pone en rojo */
+.btn.is-confirm { color: var(--danger); border-color: rgba(248, 113, 113, .5); background: rgba(248, 113, 113, .08); }
+
+.engine { margin: 0; font-size: .8rem; color: var(--text-muted); min-height: 1.2em; }
+
+/* ---------- 4. Móvil ---------- */
+@media (max-width: 900px) {
+  .play { grid-template-columns: minmax(0, 600px); }
+}

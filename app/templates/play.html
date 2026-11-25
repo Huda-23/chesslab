@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% from "_tablero.html" import dibujar_tablero %}
+
+{% block title %}Jugar · ChessLab{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/board.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/play.css') }}">
+{% endblock %}
+
+{% block content %}
+{# data-*: datos que necesita play.js. El token CSRF va aquí igual que en un
+   <input hidden> de formulario; las URLs las genera Flask con url_for. #}
+<section class="play"
+         data-play
+         data-csrf="{{ csrf_token() }}"
+         data-url-bot="{{ url_for('play.jugada_bot') }}"
+         data-url-guardar="{{ url_for('play.guardar_partida') }}"
+         data-url-perfil="{{ url_for('auth.profile') }}">
+
+  {# ===================== Tablero ===================== #}
+  <div class="play-main">
+    <div class="player player--bot">
+      <span class="player-avatar" aria-hidden="true">♞&#xFE0E;</span>
+      <span class="player-name">Bot ChessLab</span>
+      <span class="player-level" data-nivel-texto>
+        Nivel {{ niveles[nivel_basico] }}
+      </span>
+    </div>
+
+    <div class="play-board">
+      <div class="board-frame">
+        {{ dibujar_tablero(tablero, decorativo=False) }}
+      </div>
+
+      {# Panel de resultado: aparece encima del tablero al terminar la partida #}
+      <div class="result-panel" data-resultado hidden>
+        <div class="result-card">
+          <p class="result-icon" data-resultado-icono aria-hidden="true"></p>
+          <h2 class="result-title" data-resultado-titulo></h2>
+          <p class="result-reason" data-resultado-motivo></p>
+          <p class="result-saved" data-resultado-guardado></p>
+          <div class="result-actions">
+            <button class="btn btn-primary" type="button" data-accion="nueva">Jugar otra</button>
+            <a class="btn btn-ghost" href="{{ url_for('auth.profile') }}">Ver mi historial</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="player player--me">
+      <span class="avatar{% if g.user.is_premium %} avatar--pro{% endif %}" aria-hidden="true">{{ g.user.username[0] | upper }}</span>
+      <span class="player-name">{{ g.user.username }}</span>
+      {% if g.user.is_premium %}<span class="badge-pro">PRO</span>{% endif %}
+      <span class="player-color">Blancas</span>
+    </div>
+  </div>
+
+  {# ===================== Panel lateral ===================== #}
+  <aside class="play-side card">
+    {# aria-live: los lectores de pantalla leen en voz alta cada cambio de estado #}
+    <p class="status" data-estado aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span data-estado-texto>Te toca mover. Juegas con blancas.</span>
+    </p>
+
+    <div class="side-block">
+      <h2 class="side-heading">Dificultad</h2>
+      {% if g.user.is_premium %}
+        <label class="visually-hidden" for="nivel">Dificultad del bot</label>
+        <select id="nivel" data-nivel>
+          {% for clave, nombre in niveles.items() %}
+            <option value="{{ clave }}" {% if clave == nivel_basico %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+        <p class="side-note">Solo se puede cambiar antes de la primera jugada.</p>
+      {% else %}
+        <div class="level-locked">
+          <span>{{ niveles[nivel_basico] }}</span>
+          <span class="badge-pro">PRO</span>
+        </div>
+        <p class="side-note">Con ChessLab PRO puedes elegir entre {{ niveles.values() | join(', ') }}.</p>
+      {% endif %}
+    </div>
+
+    <div class="side-block side-block--moves">
+      <h2 class="side-heading">Jugadas</h2>
+      <ol class="moves" data-jugadas aria-label="Lista de jugadas"></ol>
+      <p class="moves-empty" data-jugadas-vacio>Aún no hay jugadas. Pulsa una de tus piezas para ver a dónde puede ir.</p>
+    </div>
+
+    <div class="side-actions">
+      <button class="btn btn-ghost" type="button" data-accion="rendirse" disabled>Rendirse</button>
+      <button class="btn btn-ghost" type="button" data-accion="nueva" disabled>Nueva partida</button>
+    </div>
+
+    <p class="engine" data-motor aria-live="polite"></p>
+  </aside>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {# type="module": play.js puede importar chess.js como módulo. Los dos se
+     sirven desde /static, así que la CSP puede seguir siendo script-src 'self'. #}
+  <script type="module" src="{{ url_for('static', filename='js/play.js') }}"></script>
+{% endblock %}

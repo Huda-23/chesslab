@@ -53,9 +53,21 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped(*args, **kwargs):
         if g.user is None:
+            # Recordamos qué página quería ver para llevarle allí tras el login.
+            # Se guarda en la SESIÓN (no en la URL, tipo ?next=...), así nadie
+            # puede fabricar un enlace que mande al usuario a otra web.
+            if request.method == "GET" and not request.path.startswith("/api/"):
+                session["volver_a"] = request.path
             return redirect(url_for("auth.login"))
         return view(*args, **kwargs)
     return wrapped
+
+
+def destino_seguro(ruta):
+    """Solo acepta rutas internas como "/play". Rechaza "//otra-web.com" y
+    "/\\otra-web.com", que el navegador entendería como OTRA web (redirección abierta)."""
+    return (isinstance(ruta, str) and ruta.startswith("/")
+            and not ruta.startswith(("//", "/\\")))
 
 
 @bp.route("/registro", methods=("GET", "POST"))
@@ -111,10 +123,13 @@ def login():
                 "LOGIN fallido: usuario=%r ip=%s", username, request.remote_addr)
             flash("Usuario o contraseña incorrectos.", "error")
         else:
+            volver_a = session.get("volver_a")  # se lee ANTES de vaciar la sesión
             session.clear()
             session["user_id"] = user["id"]
             current_app.logger.info(
                 "LOGIN correcto: usuario=%s ip=%s", user["username"], request.remote_addr)
+            if destino_seguro(volver_a):
+                return redirect(volver_a)
             return redirect(url_for("main.index"))
     return render_template("login.html")
 
