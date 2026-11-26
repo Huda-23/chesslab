@@ -165,3 +165,12 @@
 .arrow--naranja { stroke: #ffaa00; fill: #ffaa00; }
 .arrow--verde   { stroke: #9fcf3f; fill: #9fcf3f; }
 .arrow--azul    { stroke: #48c1f9; fill: #48c1f9; }
+
+/* ---------- Cursor del teclado (/play) ----------
+   Solo se ve al usar el teclado (:focus-visible), no al hacer clic con el ratón.
+   Va por dentro de la casilla porque el tablero recorta lo que sobresale. */
+.board .sq:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 .7cqi #22d3ee, inset 0 0 0 1.1cqi rgba(12, 14, 17, .55);
+  z-index: 3;
+}

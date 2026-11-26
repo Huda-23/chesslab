@@ -100,6 +100,27 @@ function pintarPosicion(forzar = false, filas = juego.board()) {
       }
     }
   }
+  etiquetar();
+}
+
+// Nombre de cada casilla para los lectores de pantalla: "e4, peón blanco, puedes mover aquí"
+const NOMBRES_PIEZA = { p: "peón", n: "caballo", b: "alfil", r: "torre", q: "dama", k: "rey" };
+function etiquetar() {
+  tablero.querySelectorAll(".sq").forEach((sq) => {
+    const pieza = sq.querySelector(".piece");
+    let texto = sq.dataset.sq + ", ";
+    if (pieza && pieza.dataset.p) {
+      const [color, tipo] = pieza.dataset.p;
+      texto += NOMBRES_PIEZA[tipo] + (color === "w" ? (tipo === "q" || tipo === "r" ? " blanca" : " blanco")
+                                                    : (tipo === "q" || tipo === "r" ? " negra" : " negro"));
+    } else {
+      texto += "vacía";
+    }
+    if (sq.classList.contains("sq--selected")) texto += ", seleccionada";
+    if (sq.classList.contains("sq--dot")) texto += ", puedes mover aquí";
+    if (sq.classList.contains("sq--capture")) texto += ", puedes capturar aquí";
+    sq.setAttribute("aria-label", texto);
+  });
 }
 
 function quitarClases(...clases) {
@@ -160,8 +181,20 @@ async function mostrarJugada(jugada, arrastrada = false) {
                    flags: jugada.flags, fen: juego.fen() });
   vista = historial.length;
   apuntarJugada(jugada);
+  anuncio.textContent = (jugada.color === "w" ? "Juegas: " : "El bot juega: ") + hablar(jugada)
+    + (juego.isCheckmate() ? ". Jaque mate." : juego.inCheck() ? ". Jaque." : ".");
   mostrando = false;
   actualizarNavegacion();
+}
+
+// Jugada dicha con palabras (para el lector de pantalla): "caballo de g1 a f3"
+function hablar(jugada) {
+  if (jugada.flags.includes("k")) return "enroque corto";
+  if (jugada.flags.includes("q")) return "enroque largo";
+  const pieza = NOMBRES_PIEZA[jugada.piece] || "pieza";
+  let texto = pieza + " de " + jugada.from + (jugada.captured ? " captura en " : " a ") + jugada.to;
+  if (jugada.promotion) texto += ", corona a " + NOMBRES_PIEZA[jugada.promotion];
+  return texto;
 }
 
 function marcarUltima(jugada) {
@@ -291,7 +324,7 @@ $("[data-volver]").addEventListener("click", () => irA(historial.length));
 // Teclado: ← → una jugada, ↑ al inicio, ↓ a la posición actual (como en chess.com)
 document.addEventListener("keydown", (evento) => {
   if (evento.altKey || evento.ctrlKey || evento.metaKey || !historial.length) return;
-  if (evento.target.closest("input, select, textarea, [contenteditable]")) return;
+  if (evento.target.closest("input, select, textarea, [contenteditable], .board")) return;
   const destino = { ArrowLeft: vista - 1, ArrowRight: vista + 1, ArrowUp: 0, ArrowDown: historial.length }[evento.key];
   if (destino === undefined) return;
   evento.preventDefault();       // que las flechas no muevan la página
@@ -342,6 +375,7 @@ function deseleccionar() {
   seleccion = null;
   destinos = new Map();
   quitarClases("sq--selected", "sq--dot", "sq--capture", "sq--hover");
+  etiquetar();
 }
 
 function seleccionar(nombre) {
@@ -353,6 +387,7 @@ function seleccionar(nombre) {
     destinos.set(m.to, m);
     casilla(m.to).classList.add(m.captured ? "sq--capture" : "sq--dot");
   }
+  etiquetar();
 }
 
 // Solo se mueve en la posición actual: mirando una jugada antigua, el tablero es de solo lectura
@@ -382,9 +417,10 @@ tablero.addEventListener("pointerdown", (evento) => {
     irA(historial.length);
     return;
   }
-  if (evento.button !== 0 || !puedoMover()) return;   // solo botón principal
+  if (evento.button !== 0) return;                     // solo botón principal
   const sq = evento.target.closest(".sq");
-  if (!sq) return;
+  if (sq) ponerCursor(sq.dataset.sq, false);
+  if (!puedoMover() || !sq) return;
   const nombre = sq.dataset.sq;
 
   // Segundo clic de "clic-clic": ya había pieza elegida y pulsas un destino legal
@@ -467,6 +503,59 @@ tablero.addEventListener("pointerup", (evento) => {
 // El sistema cancela el gesto (p. ej. cambia de ventana): la pieza vuelve
 tablero.addEventListener("pointercancel", soltarPieza);
 tablero.addEventListener("lostpointercapture", soltarPieza);
+
+/* ---------- 4b. Jugar con el teclado ----------
+   - Tab lleva al tablero (una sola parada: "roving tabindex").
+   - Flechas: mueven el cursor por las casillas (↑ hacia las negras).
+   - Intro o Espacio: elige tu pieza; en un destino legal, juega.
+   - Esc: cancela la selección.
+   Hace exactamente lo mismo que el ratón: mismas funciones, misma legalidad. */
+
+let cursor = "e2";
+const COLS = "abcdefgh";
+
+// Todas las casillas son botones; solo la del cursor es alcanzable con Tab
+tablero.querySelectorAll(".sq").forEach((sq) => {
+  sq.setAttribute("role", "button");
+  sq.tabIndex = sq.dataset.sq === cursor ? 0 : -1;
+});
+
+function ponerCursor(nombre, enfocar = true) {
+  casilla(cursor).tabIndex = -1;
+  cursor = nombre;
+  const sq = casilla(cursor);
+  sq.tabIndex = 0;
+  if (enfocar) sq.focus();
+}
+
+function activarCasilla(nombre) {
+  if (!enVivo() && !terminada) { irA(historial.length); return; }   // estabas revisando
+  if (!puedoMover()) return;
+  if (seleccion && destinos.has(nombre)) { moverYo(seleccion, nombre); return; }
+  const pieza = juego.get(nombre);
+  if (pieza && pieza.color === "w" && nombre !== seleccion) seleccionar(nombre);
+  else deseleccionar();
+}
+
+tablero.addEventListener("keydown", (evento) => {
+  if (evento.altKey || evento.ctrlKey || evento.metaKey) return;
+  const col = COLS.indexOf(cursor[0]);
+  const fila = Number(cursor[1]);
+  const pasos = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[evento.key];
+
+  if (pasos) {
+    evento.preventDefault();
+    const c = Math.min(7, Math.max(0, col + pasos[0]));
+    const f = Math.min(8, Math.max(1, fila + pasos[1]));
+    ponerCursor(COLS[c] + f);
+  } else if (evento.key === "Enter" || evento.key === " ") {
+    evento.preventDefault();      // el espacio no debe bajar la página
+    activarCasilla(cursor);
+  } else if (evento.key === "Escape" && seleccion) {
+    evento.preventDefault();
+    deseleccionar();
+  }
+});
 
 async function moverYo(desde, hasta, arrastrada = false) {
   deseleccionar();
