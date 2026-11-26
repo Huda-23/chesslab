@@ -147,7 +147,49 @@ select:disabled { opacity: .55; cursor: not-allowed; }
 }
 .moves li:nth-child(odd) { background: rgba(255, 255, 255, .025); }
 .move-num { color: var(--text-muted); }
-.move.is-last { color: var(--accent); font-weight: 700; }
+/* Cada jugada es un botón: sin aspecto de botón, pero con foco visible */
+.moves { position: relative; }          /* para calcular dónde está cada fila al desplazar */
+.move {
+  justify-self: start;
+  margin: 0; padding: .05rem .4rem; border: 0; border-radius: 5px;
+  font: inherit; color: var(--text); background: none;
+  cursor: pointer;
+}
+.move:hover { background: rgba(255, 255, 255, .07); }
+.move.is-current { color: var(--accent); font-weight: 700; background: rgba(52, 211, 153, .14); }
+
+/* Botones para revisar: inicio, anterior, siguiente, actual */
+.move-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; margin-top: .6rem; }
+.move-nav-btn {
+  display: grid; place-items: center;
+  height: 38px; padding: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-elev);
+  color: var(--text); cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.move-nav-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.move-nav-btn:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border-strong); }
+.move-nav-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* Aviso "estás mirando una jugada antigua" */
+.review-note {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .3rem .75rem;
+  margin: .6rem 0 0; padding: .5rem .75rem;
+  border-radius: var(--radius-sm);
+  font-size: .84rem; color: var(--text);
+  background: rgba(34, 211, 238, .08); border: 1px solid rgba(34, 211, 238, .35);
+}
+.review-note[hidden] { display: none; }
+.link-btn {
+  padding: 0; border: 0; background: none;
+  font: inherit; font-weight: 700; color: var(--accent-2);
+  cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* El marco del tablero cambia de color mientras revisas (no se puede mover) */
+.board-frame { transition: box-shadow .2s; }
+.board-frame.is-reviewing { box-shadow: 0 0 0 2px rgba(34, 211, 238, .7), 0 30px 60px -20px rgba(0, 0, 0, .7); }
 .moves-empty { margin: 0; font-size: .88rem; color: var(--text-muted); }
 .moves-empty[hidden] { display: none; }
 
@@ -162,3 +204,12 @@ select:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 900px) {
   .play { grid-template-columns: minmax(0, 600px); }
 }
+
+/* Ayuda de las flechas: solo tiene sentido con ratón */
+.side-tip { margin: 0; line-height: 1.45; }
+.side-tip kbd {
+  padding: .05rem .35rem; border-radius: 5px;
+  font: inherit; font-size: .75rem; font-weight: 650;
+  color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+}
+@media (hover: none) { .side-tip { display: none; } }

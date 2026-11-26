@@ -12,6 +12,7 @@
      creados con createElement. Así ningún dato puede inyectar HTML.
    ========================================================================== */
 import { Chess } from "../vendor/chessjs/chess.js";
+import { activarAnotaciones } from "./anotaciones.js";
 
 const raiz = document.querySelector("[data-play]");
 const tablero = raiz.querySelector(".board");
@@ -34,6 +35,16 @@ const textoMotor = $("[data-motor]");
 const botonRendirse = $('.side-actions [data-accion="rendirse"]');
 const botonNueva = $('.side-actions [data-accion="nueva"]');
 const panelResultado = $("[data-resultado]");
+const marco = raiz.querySelector(".board-frame");
+const botonesNav = {
+  inicio: $('[data-ir="inicio"]'),
+  anterior: $('[data-ir="anterior"]'),
+  siguiente: $('[data-ir="siguiente"]'),
+  final: $('[data-ir="final"]'),
+};
+const avisoRevision = $("[data-revision]");
+const textoRevision = $("[data-revision-texto]");
+const anuncio = $("[data-anuncio]");        // solo para lectores de pantalla
 
 const SIMBOLOS = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
 // Notación en español: Caballo, Alfil, Torre, Dama, Rey (la "O" del enroque no cambia)
@@ -47,8 +58,21 @@ let botPensando = false;
 let terminada = false;
 let guardando = false;
 
+// Historial para revisar la partida: cada jugada con la posición que deja (FEN).
+// "vista" = cuántas jugadas se están mostrando en el tablero (0 = posición inicial).
+// Si vista === historial.length estás "en vivo"; si no, estás mirando el pasado.
+const POSICION_INICIAL = juego.fen();
+let historial = [];
+let vista = 0;
+let mostrando = false;         // true mientras se anima una jugada nueva
+let navegacion = 0;            // contador para descartar animaciones de revisión antiguas
+const enVivo = () => vista === historial.length;
+
 const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms));
 const casilla = (nombre) => tablero.querySelector('[data-sq="' + nombre + '"]');
+
+// Flechas y casillas marcadas con el clic derecho (ver anotaciones.js)
+const anotaciones = activarAnotaciones(tablero);
 
 
 /* ---------- 1. Dibujar el tablero a partir del estado de chess.js ---------- */
@@ -63,8 +87,7 @@ function crearPieza(color, tipo) {
 
 // Pone en cada casilla la pieza que dice chess.js. Solo toca las casillas
 // que han cambiado; así arregla enroques, capturas al paso y coronaciones.
-function pintarPosicion(forzar = false) {
-  const filas = juego.board();
+function pintarPosicion(forzar = false, filas = juego.board()) {
   for (let i = 0; i < 8; i++) {
     for (let j = 0; j < 8; j++) {
       const el = casilla("abcdefgh"[j] + (8 - i));
@@ -72,7 +95,7 @@ function pintarPosicion(forzar = false) {
       const esperado = datos ? datos.color + datos.type : "";
       const actual = el.querySelector(".piece");
       if (forzar || (actual ? actual.dataset.p : "") !== esperado) {
-        if (actual) actual.remove();
+        el.querySelectorAll(".piece").forEach((p) => p.remove());
         if (datos) el.appendChild(crearPieza(datos.color, datos.type));
       }
     }
@@ -83,11 +106,11 @@ function quitarClases(...clases) {
   tablero.querySelectorAll("." + clases.join(", .")).forEach((sq) => sq.classList.remove(...clases));
 }
 
-function marcarJaque() {
+function marcarJaque(partida = juego) {
   quitarClases("sq--check");
-  if (!juego.inCheck()) return;
-  const turno = juego.turn();
-  juego.board().flat().forEach((p) => {
+  if (!partida.inCheck()) return;
+  const turno = partida.turn();
+  partida.board().flat().forEach((p) => {
     if (p && p.type === "k" && p.color === turno) casilla(p.square).classList.add("sq--check");
   });
 }
@@ -124,19 +147,38 @@ async function colocar(desde, hasta) {
 // Muestra en el tablero una jugada que chess.js YA ha aplicado
 // arrastrada = true: la pieza ya está donde la soltaste, así que no se desliza
 async function mostrarJugada(jugada, arrastrada = false) {
+  mostrando = true;
+  navegacion++;                  // anula cualquier animación de revisión a medias
+  anotaciones.borrar();          // como en chess.com: cada jugada limpia las flechas
+  marcarUltima(jugada);
+
+  await Promise.all(arrastrada ? [colocar(jugada.from, jugada.to)] : animarJugada(jugada));
+
+  pintarPosicion(true);
+  marcarJaque();
+  historial.push({ from: jugada.from, to: jugada.to, san: jugada.san, color: jugada.color,
+                   flags: jugada.flags, fen: juego.fen() });
+  vista = historial.length;
+  apuntarJugada(jugada);
+  mostrando = false;
+  actualizarNavegacion();
+}
+
+function marcarUltima(jugada) {
   quitarClases("sq--last");
+  if (!jugada) return;
   casilla(jugada.from).classList.add("sq--last");
   casilla(jugada.to).classList.add("sq--last");
+}
 
-  const animaciones = [arrastrada ? colocar(jugada.from, jugada.to) : deslizar(jugada.from, jugada.to)];
+// Animaciones de una jugada (con la torre si es enroque).
+// atras = true: la deshace (la pieza vuelve de "to" a "from").
+function animarJugada(jugada, atras = false) {
   const fila = jugada.from[1];
-  if (jugada.flags.includes("k")) animaciones.push(deslizar("h" + fila, "f" + fila)); // enroque corto
-  if (jugada.flags.includes("q")) animaciones.push(deslizar("a" + fila, "d" + fila)); // enroque largo
-  await Promise.all(animaciones);
-
-  pintarPosicion();
-  marcarJaque();
-  apuntarJugada(jugada);
+  const pares = [[jugada.from, jugada.to]];
+  if (jugada.flags.includes("k")) pares.push(["h" + fila, "f" + fila]);   // enroque corto
+  if (jugada.flags.includes("q")) pares.push(["a" + fila, "d" + fila]);   // enroque largo
+  return pares.map(([a, b]) => (atras ? deslizar(b, a) : deslizar(a, b)));
 }
 
 
@@ -148,10 +190,12 @@ function traducir(san) {
 
 function apuntarJugada(jugada) {
   listaVacia.hidden = true;
-  listaJugadas.querySelectorAll(".is-last").forEach((el) => el.classList.remove("is-last"));
 
-  const texto = document.createElement("span");
-  texto.className = "move is-last";
+  // Cada jugada es un BOTÓN: se puede pulsar con el ratón o con el teclado (Tab + Intro)
+  const texto = document.createElement("button");
+  texto.type = "button";
+  texto.className = "move";
+  texto.dataset.ply = historial.length;     // número de jugada (1, 2, 3...)
   texto.textContent = traducir(jugada.san);
 
   if (jugada.color === "w") {
@@ -164,8 +208,95 @@ function apuntarJugada(jugada) {
   } else {
     listaJugadas.lastElementChild.appendChild(texto);
   }
-  listaJugadas.scrollTop = listaJugadas.scrollHeight;
 }
+
+// Clic en una jugada de la lista: el tablero salta a esa posición
+listaJugadas.addEventListener("click", (evento) => {
+  const boton = evento.target.closest("button[data-ply]");
+  if (boton) irA(Number(boton.dataset.ply));
+});
+
+
+/* ---------- 2b. Revisar la partida: botones, teclado y lista ---------- */
+
+function describir(n) {
+  if (n === 0) return "Posición inicial";
+  const j = historial[n - 1];
+  const numero = Math.ceil(n / 2);
+  return numero + (j.color === "w" ? ". " : "... ") + traducir(j.san);
+}
+
+// Pone el tablero en la posición tras n jugadas
+async function irA(n) {
+  n = Math.max(0, Math.min(n, historial.length));
+  if (n === vista || mostrando) return;
+  const anterior = vista;
+  const id = ++navegacion;
+  vista = n;
+  soltarPieza();
+  deseleccionar();
+  anotaciones.borrar();
+  actualizarNavegacion();
+
+  // Un paso adelante o atrás se anima; los saltos largos, no
+  if (!reducirMovimiento && Math.abs(n - anterior) === 1) {
+    const adelante = n > anterior;
+    const jugada = historial[(adelante ? n : anterior) - 1];
+    await Promise.all(animarJugada(jugada, !adelante));
+    if (id !== navegacion) return;   // mientras se animaba se pidió otra posición
+  }
+
+  const visor = new Chess(n ? historial[n - 1].fen : POSICION_INICIAL);
+  pintarPosicion(true, visor.board());
+  marcarUltima(n ? historial[n - 1] : null);
+  marcarJaque(visor);
+  anuncio.textContent = describir(n) + (enVivo() ? ". Posición actual." : "");
+}
+
+function actualizarNavegacion() {
+  const total = historial.length;
+  botonesNav.inicio.disabled = botonesNav.anterior.disabled = vista === 0;
+  botonesNav.siguiente.disabled = botonesNav.final.disabled = enVivo();
+
+  marco.classList.toggle("is-reviewing", !enVivo());
+  avisoRevision.hidden = enVivo();
+  textoRevision.textContent = (vista ? "Viendo " + describir(vista) : "Viendo la posición inicial")
+    + " (" + vista + " de " + total + ")";
+  tablero.classList.toggle("is-turn", puedoMover());
+
+  // Resalta en la lista la jugada que se ve en el tablero
+  listaJugadas.querySelectorAll(".is-current").forEach((el) => {
+    el.classList.remove("is-current");
+    el.removeAttribute("aria-current");
+  });
+  const actual = listaJugadas.querySelector('[data-ply="' + vista + '"]');
+  if (actual) {
+    actual.classList.add("is-current");
+    actual.setAttribute("aria-current", "step");
+    // Desplaza la lista (solo la lista, no la página) para que se vea
+    const fila = actual.closest("li");
+    if (fila.offsetTop < listaJugadas.scrollTop) listaJugadas.scrollTop = fila.offsetTop;
+    else if (fila.offsetTop + fila.offsetHeight > listaJugadas.scrollTop + listaJugadas.clientHeight) {
+      listaJugadas.scrollTop = fila.offsetTop + fila.offsetHeight - listaJugadas.clientHeight;
+    }
+  }
+}
+
+botonesNav.inicio.addEventListener("click", () => irA(0));
+botonesNav.anterior.addEventListener("click", () => irA(vista - 1));
+botonesNav.siguiente.addEventListener("click", () => irA(vista + 1));
+botonesNav.final.addEventListener("click", () => irA(historial.length));
+$("[data-volver]").addEventListener("click", () => irA(historial.length));
+
+// Teclado: ← → una jugada, ↑ al inicio, ↓ a la posición actual (como en chess.com)
+document.addEventListener("keydown", (evento) => {
+  if (evento.altKey || evento.ctrlKey || evento.metaKey || !historial.length) return;
+  if (evento.target.closest("input, select, textarea, [contenteditable]")) return;
+  const destino = { ArrowLeft: vista - 1, ArrowRight: vista + 1, ArrowUp: 0, ArrowDown: historial.length }[evento.key];
+  if (destino === undefined) return;
+  evento.preventDefault();       // que las flechas no muevan la página
+  irA(destino);
+});
 
 
 /* ---------- 3. Estado, botones y nivel ---------- */
@@ -178,8 +309,7 @@ function ponerEstado(texto, tipo = "") {
 
 function actualizarControles() {
   const empezada = juego.history().length > 0;
-  const miTurno = !terminada && !botPensando && juego.turn() === "w";
-  tablero.classList.toggle("is-turn", miTurno);
+  tablero.classList.toggle("is-turn", puedoMover());
   botonRendirse.disabled = !empezada || terminada || botPensando;
   botonNueva.disabled = empezada && !terminada;
   if (selectorNivel) selectorNivel.disabled = empezada && !terminada;
@@ -225,7 +355,8 @@ function seleccionar(nombre) {
   }
 }
 
-const puedoMover = () => !terminada && !botPensando && juego.turn() === "w";
+// Solo se mueve en la posición actual: mirando una jugada antigua, el tablero es de solo lectura
+const puedoMover = () => !terminada && !botPensando && !mostrando && enVivo() && juego.turn() === "w";
 
 // Casilla del tablero que hay bajo el puntero (o null si estás fuera)
 function casillaEnPunto(x, y) {
@@ -246,6 +377,11 @@ function soltarPieza() {
 }
 
 tablero.addEventListener("pointerdown", (evento) => {
+  // Mirando una jugada antigua, un clic en el tablero te devuelve a la partida
+  if (evento.button === 0 && !enVivo() && !terminada) {
+    irA(historial.length);
+    return;
+  }
   if (evento.button !== 0 || !puedoMover()) return;   // solo botón principal
   const sq = evento.target.closest(".sq");
   if (!sq) return;
@@ -405,6 +541,14 @@ async function turnoDelBot() {
   const transcurrido = performance.now() - inicio;
   if (transcurrido < 450) await esperar(450 - transcurrido);
 
+  // Si estabas mirando jugadas antiguas, vuelves a la posición actual para ver la del bot
+  if (!enVivo()) {
+    navegacion++;
+    vista = historial.length;
+    const previa = new Chess(historial.length ? historial[historial.length - 1].fen : POSICION_INICIAL);
+    pintarPosicion(true, previa.board());
+    marcarJaque(previa);
+  }
   await mostrarJugada(jugada);
   textoMotor.textContent = "Última jugada del bot: " + fuente + ".";
   botPensando = false;
@@ -519,6 +663,7 @@ function restaurarRendirse() {
 
 function nuevaPartida() {
   soltarPieza();
+  anotaciones.borrar();
   juego.reset();
   terminada = false;
   botPensando = false;
@@ -528,15 +673,26 @@ function nuevaPartida() {
   pintarPosicion(true);
   listaJugadas.replaceChildren();
   listaVacia.hidden = false;
+  historial = [];
+  vista = 0;
+  navegacion++;
   textoMotor.textContent = "";
   panelResultado.hidden = true;
   ponerEstado("Te toca mover. Juegas con blancas.");
   actualizarControles();
+  actualizarNavegacion();
 }
 
 raiz.querySelectorAll('[data-accion="nueva"]').forEach((boton) => boton.addEventListener("click", nuevaPartida));
+
+// Al terminar: quitar el panel del resultado para repasar la partida
+$('[data-accion="revisar"]').addEventListener("click", () => {
+  panelResultado.hidden = true;
+  botonesNav.anterior.focus();
+});
 
 
 /* ---------- 8. Arranque ---------- */
 pintarPosicion(true);
 actualizarControles();
+actualizarNavegacion();

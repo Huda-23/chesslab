@@ -142,3 +142,26 @@
 }
 .turn--w { background: #fbfaf6; }
 .turn--b { background: #15181c; }
+
+/* ---------- Anotaciones con el clic derecho (anotaciones.js) ---------- */
+/* Casilla marcada: un color encima del fondo de la casilla (las piezas quedan por encima) */
+.sq--mark-rojo  { background-image: linear-gradient(rgba(235, 97, 80, .82), rgba(235, 97, 80, .82)); }
+.sq--mark-verde { background-image: linear-gradient(rgba(172, 206, 89, .85), rgba(172, 206, 89, .85)); }
+.sq--mark-azul  { background-image: linear-gradient(rgba(82, 176, 220, .85), rgba(82, 176, 220, .85)); }
+
+/* Capa de flechas: encima de las piezas, debajo de la que arrastras (z-index 50).
+   pointer-events: none -> los clics atraviesan las flechas y llegan a las casillas. */
+.board-arrows {
+  position: absolute; inset: 0; z-index: 40;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+/* opacity en el grupo: cuerpo y punta se funden en una sola forma semitransparente */
+.arrow { opacity: .8; }
+.arrow--preview { opacity: .5; }
+.arrow-body { fill: none; stroke-width: .17; stroke-linecap: butt; stroke-linejoin: miter; }
+.arrow-head { stroke: none; }
+.arrow--naranja { stroke: #ffaa00; fill: #ffaa00; }
+.arrow--verde   { stroke: #9fcf3f; fill: #9fcf3f; }
+.arrow--azul    { stroke: #48c1f9; fill: #48c1f9; }
